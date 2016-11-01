@@ -7,12 +7,25 @@ project (bubbles)
 
 set(EXTERN_PATH "" CACHE PATH "External dependencies folder")
 
+
+if(CMAKE_SYSTEM MATCHES "Linux*")
+	message("Detected system ON_LINUX")
+	
+	set(SYS_BASIC_LIBS pthread rt)
+	set(SYS_DYNAMIC_LOAD_LIB dl)
+endif(CMAKE_SYSTEM MATCHES "Linux*")
+
 #-----------------------------------------------------------------
 # Global include directories
 #-----------------------------------------------------------------
 include_directories(
 	${CMAKE_CURRENT_BINARY_DIR}
+	${CMAKE_CURRENT_SOURCE_DIR}
 	${EXTERN_PATH}/include/
+)
+
+link_directories(
+	${EXTERN_PATH}/lib
 )
 #-----------------------------------------------------------------
 
@@ -22,4 +35,5 @@ include_directories(
 #-----------------------------------------------------------------
 add_subdirectory (server)
 add_subdirectory (client)
+
 
