@@ -8,10 +8,8 @@
 #include "solid/frame/mpipc/mpipcservice.hpp"
 #include "solid/frame/mpipc/mpipcconfiguration.hpp"
 
+#include "client/engine/bubbles_client_engine.hpp"
 #include "protocol/bubbles_messages.hpp"
-
-#include "bubbles_server_engine.hpp"
-
 
 #include "boost/program_options.hpp"
 
@@ -26,7 +24,17 @@ using AioSchedulerT = frame::Scheduler<frame::aio::Reactor>;
 //		Parameters
 //-----------------------------------------------------------------------------
 struct Parameters{
-	Parameters():listener_port("0"), listener_addr("0.0.0.0"){}
+	Parameters(){}
+	
+	void prepare(){
+		size_t pos = connect_endpoint.rfind(':');
+		if(pos == string::npos){
+			connect_addr = connect_endpoint;
+		}else{
+			connect_addr = connect_endpoint.substr(0, pos);
+			connect_port = connect_endpoint.substr(pos + 1);
+		}
+	}
 	
 	string					dbg_levels;
 	string					dbg_modules;
@@ -36,17 +44,98 @@ struct Parameters{
 	bool					dbg_buffered;
 	
 	bool					secure;
-	string					listener_port;
-	string					listener_addr;
+	
+	string					connect_endpoint;
+	string					connect_addr;
+	string					connect_port;
 };
 
 //-----------------------------------------------------------------------------
-
 namespace bubbles{
-namespace server{
+namespace client{
 
 template <typename T>
 struct MessageSetup;
+
+template<>
+struct MessageSetup<RegisterRequest>{
+	Engine &engine;
+	
+	MessageSetup(Engine &_engine):engine(_engine){}
+	
+	void operator()(frame::mpipc::serialization_v1::Protocol &_rprotocol, const size_t _protocol_idx, const size_t _message_idx){
+		Engine &eng = engine;
+		auto lambda = [&eng](
+			frame::mpipc::ConnectionContext &_rctx,
+			std::shared_ptr<RegisterRequest> &_rsent_msg_ptr,
+			std::shared_ptr<RegisterResponse> &_rrecv_msg_ptr,
+			ErrorConditionT const &_rerror
+		){
+			eng.onMessage(_rctx, _rsent_msg_ptr, _rrecv_msg_ptr, _rerror);
+		};
+		_rprotocol.registerType<RegisterRequest>(lambda, _protocol_idx, _message_idx);
+	}
+};
+
+template<>
+struct MessageSetup<RegisterResponse>{
+	Engine &engine;
+	
+	MessageSetup(Engine &_engine):engine(_engine){}
+	
+	void operator()(frame::mpipc::serialization_v1::Protocol &_rprotocol, const size_t _protocol_idx, const size_t _message_idx){
+		Engine &eng = engine;
+		auto lambda = [&eng](
+			frame::mpipc::ConnectionContext &_rctx,
+			std::shared_ptr<RegisterRequest> &_rsent_msg_ptr,
+			std::shared_ptr<RegisterResponse> &_rrecv_msg_ptr,
+			ErrorConditionT const &_rerror
+		){
+			eng.onMessage(_rctx, _rsent_msg_ptr, _rrecv_msg_ptr, _rerror);
+		};
+		_rprotocol.registerType<RegisterResponse>(lambda, _protocol_idx, _message_idx);
+	}
+};
+
+template<>
+struct MessageSetup<EventsNotificationRequest>{
+	Engine &engine;
+	
+	MessageSetup(Engine &_engine):engine(_engine){}
+	
+	void operator()(frame::mpipc::serialization_v1::Protocol &_rprotocol, const size_t _protocol_idx, const size_t _message_idx){
+		Engine &eng = engine;
+		auto lambda = [&eng](
+			frame::mpipc::ConnectionContext &_rctx,
+			std::shared_ptr<EventsNotificationRequest> &_rsent_msg_ptr,
+			std::shared_ptr<EventsNotificationResponse> &_rrecv_msg_ptr,
+			ErrorConditionT const &_rerror
+		){
+			eng.onMessage(_rctx, _rsent_msg_ptr, _rrecv_msg_ptr, _rerror);
+		};
+		_rprotocol.registerType<EventsNotificationRequest>(lambda, _protocol_idx, _message_idx);
+	}
+};
+
+template<>
+struct MessageSetup<EventsNotificationResponse>{
+	Engine &engine;
+	
+	MessageSetup(Engine &_engine):engine(_engine){}
+	
+	void operator()(frame::mpipc::serialization_v1::Protocol &_rprotocol, const size_t _protocol_idx, const size_t _message_idx){
+		Engine &eng = engine;
+		auto lambda = [&eng](
+			frame::mpipc::ConnectionContext &_rctx,
+			std::shared_ptr<EventsNotificationRequest> &_rsent_msg_ptr,
+			std::shared_ptr<EventsNotificationResponse> &_rrecv_msg_ptr,
+			ErrorConditionT const &_rerror
+		){
+			eng.onMessage(_rctx, _rsent_msg_ptr, _rrecv_msg_ptr, _rerror);
+		};
+		_rprotocol.registerType<EventsNotificationResponse>(lambda, _protocol_idx, _message_idx);
+	}
+};
 
 template <typename M>
 struct MessageSetup{
@@ -68,7 +157,7 @@ struct MessageSetup{
 	}
 };
 
-}//namespace server
+}//namespace client
 }//namespace bubbles
 
 //-----------------------------------------------------------------------------
@@ -83,7 +172,7 @@ int main(int argc, char *argv[]){
 	Parameters p;
 	
 	if(parseArguments(p, argc, argv)) return 0;
-	
+
 #ifdef SOLID_HAS_DEBUG
 	{
 	string dbgout;
@@ -116,7 +205,6 @@ int main(int argc, char *argv[]){
 	cout<<"Debug modules: "<<dbgout<<endl;
 	}
 #endif
-	
 	{
 		
 		AioSchedulerT				scheduler;
@@ -124,8 +212,11 @@ int main(int argc, char *argv[]){
 		
 		frame::Manager				manager;
 		frame::mpipc::ServiceT		ipcservice(manager);
+		
+		frame::aio::Resolver		resolver;
+		
 		ErrorConditionT				err;
-		bubbles::server::Engine		engine(bubbles::server::EngineConfiguration{});
+		bubbles::client::Engine		engine{ipcservice};
 		
 		err = scheduler.start(1);
 		
@@ -134,38 +225,42 @@ int main(int argc, char *argv[]){
 			return 1;
 		}
 		
+		err = resolver.start(1);
+		
+		if(err){
+			cout<<"Error starting aio resolver: "<<err.message()<<endl;
+			return 1;
+		}
+		
 		{
-			auto						proto = frame::mpipc::serialization_v1::Protocol::create(serialization::binary::Limits(256, 128, 0));//small limits by default
+			auto 						proto = frame::mpipc::serialization_v1::Protocol::create(serialization::binary::Limits(256, 128, 0));//small limits by default
 			frame::mpipc::Configuration	cfg(scheduler, proto);
 			
-			bubbles::ProtoSpecT::setup<bubbles::server::MessageSetup>(*proto, 0, std::ref(engine));
+			bubbles::ProtoSpecT::setup<bubbles::client::MessageSetup>(*proto, 0, std::ref(engine));
 			
-			cfg.server.listener_address_str = p.listener_addr;
-			cfg.server.listener_address_str += ':';
-			cfg.server.listener_address_str += p.listener_port;
+			cfg.client.name_resolve_fnc = frame::mpipc::InternetResolverF(resolver, p.connect_port.c_str());
 			
-			cfg.server.connection_start_state = frame::mpipc::ConnectionState::Active;
-			//cfg.pool_max_message_queue_size
+			cfg.client.connection_start_state = frame::mpipc::ConnectionState::Passive;
 			
 			err = ipcservice.reconfigure(std::move(cfg));
 			
 			if(err){
 				cout<<"Error starting ipcservice: "<<err.message()<<endl;
-				manager.stop();
 				return 1;
-			}
-			{
-				std::ostringstream oss;
-				oss<<ipcservice.configuration().server.listenerPort();
-				cout<<"Server listens on port: "<<oss.str()<<endl;
 			}
 		}
 		
-		cout<<"Press any char and ENTER to stop: ";
-		char c;
-		cin>>c;
-		//cout<<"Max dropped message count: "<<engine.maxDroppedMessageCount()<<endl;
-		engine.plotStatistics(cout);
+		
+		while(true){
+			string	line;
+			getline(cin, line);
+			
+			if(line == "q" or line == "Q" or line == "quit"){
+				break;
+			}
+			{
+			}
+		}
 	}
 	return 0;
 }
@@ -185,8 +280,7 @@ bool parseArguments(Parameters &_par, int argc, char *argv[]){
 			("debug-console,C", value<bool>(&_par.dbg_console)->implicit_value(true)->default_value(false), "Debug console")
 			("debug-unbuffered,S", value<bool>(&_par.dbg_buffered)->implicit_value(false)->default_value(true), "Debug unbuffered")
 			
-			("listen-port,p", value<std::string>(&_par.listener_port)->default_value("2000"), "IPC Listen port")
-			("listen-addr,a", value<std::string>(&_par.listener_addr)->default_value("0.0.0.0"), "IPC Listen address")
+			("connect,c", value<std::string>(&_par.connect_endpoint)->default_value("localhost:2000"), "Server endpoint: address:port")
 			("secure,s", value<bool>(&_par.secure)->implicit_value(true)->default_value(false), "Use SSL to secure communication")
 		;
 		variables_map vm;
@@ -202,5 +296,6 @@ bool parseArguments(Parameters &_par, int argc, char *argv[]){
 		return true;
 	}
 }
+
 
 

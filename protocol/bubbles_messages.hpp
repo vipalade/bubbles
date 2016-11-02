@@ -47,14 +47,18 @@ struct RegisterResponse: solid::frame::mpipc::Message{
 	}
 };
 
-struct SenderId{
+struct ConnectionId{
 	uint32_t	server_idx;
 	uint32_t	server_unq;
 	
 	uint64_t	connection_idx;
 	uint32_t	connection_unq;
 	
-	SenderId():server_idx(-1), server_unq(-1), connection_idx(-1), connection_unq(-1){}
+	ConnectionId():server_idx(solid::InvalidIndex()), server_unq(solid::InvalidIndex()), connection_idx(solid::InvalidIndex()), connection_unq(solid::InvalidIndex()){}
+	
+	bool isValid()const{
+		return server_idx != solid::InvalidIndex();
+	}
 	
 	template <class S>
 	void serialize(S &_s, solid::frame::mpipc::ConnectionContext &_rctx){
@@ -83,22 +87,59 @@ struct Event{
 	uint32_t	diff_time_msec;
 };
 
+//Push notification - no guarantee and no feedback for delivery
 struct EventsNotification: solid::frame::mpipc::Message{
 	using EventVectorT = std::vector<Event>;
 	
-	SenderId		sender_id;
+	ConnectionId	connection_id;
 	uint32_t		sender_rgb_colour;
 	Event			main_event;
 	EventVectorT	events;
+	std::string		text;
+	
+	EventsNotification(){}
 	
 	template <class S>
 	void serialize(S &_s, solid::frame::mpipc::ConnectionContext &_rctx){
-		_s.pushContainer(events, "events").push(main_event, "main_event").push(sender_rgb_colour, "sender_rgb_colour").push(sender_id, "sender_id");
+		_s.pushContainerLimit();//back to default
+		_s.pushStringLimit();//back to default
+		_s.push(text, "text").pushContainer(events, "events").push(main_event, "main_event").push(sender_rgb_colour, "sender_rgb_colour").push(connection_id, "connection_id");
+		_s.pushContainerLimit(1024);
+		_s.pushStringLimit(1024);
 	}
 };
 
+//Push notification with feedback for delivery
+struct EventsNotificationRequest: EventsNotification{
+};
 
-using ProtoSpecT = solid::frame::mpipc::serialization_v1::ProtoSpec<0, RegisterRequest, RegisterResponse, EventsNotification>;
+struct EventsNotificationResponse: solid::frame::mpipc::Message{
+	uint32_t		error;
+	uint32_t		success_count;
+	uint32_t		fail_count;
+	std::string		message;
+	
+	EventsNotificationResponse():error(0){}
+	
+	EventsNotificationResponse(
+		const EventsNotificationRequest &_req,
+		uint32_t _error,
+		uint32_t _success_count,
+		uint32_t _fail_count,
+		const std::string &_rmsg = ""
+	):	solid::frame::mpipc::Message(_req), error(_error),
+		success_count(_success_count), fail_count(_fail_count), message(_rmsg){}
+	
+	template <class S>
+	void serialize(S &_s, solid::frame::mpipc::ConnectionContext &_rctx){
+		_s.push(message, "message").push(fail_count, "fail_count").push(success_count, "success_count").push(error, "error");
+	}
+};
+
+using ProtoSpecT = solid::frame::mpipc::serialization_v1::ProtoSpec<
+	0, RegisterRequest, RegisterResponse, EventsNotification,
+	EventsNotificationRequest, EventsNotificationResponse
+>;
 
 }//namespace bubbles
 

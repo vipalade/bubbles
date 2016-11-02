@@ -9,6 +9,8 @@ target_link_libraries (bubbles_server
 	solid_serialization
 	solid_utility
 	solid_system
+	boost_program_options
+	boost_system
 	${SYS_BASIC_LIBS}
 	${SYS_DYNAMIC_LOAD_LIB}
 )
