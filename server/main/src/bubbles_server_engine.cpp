@@ -28,28 +28,28 @@ const char * error_message(const uint32_t err_id){
 	switch(err_id){
 		case 0: return "No error";
 		case ErrorAlreadyRegistered: return "Already registered - closing connection";
-		case ErrorNoColour: return "No colour available - closing connection";
+		case ErrorNoColour: return "No color available - closing connection";
 		default:
 			return "Unknown error";
 	}
 }
 
 struct ConnectionData{
-	ConnectionData(): room_index(-1), room_entry_index(-1), rgb_colour(0){}
+	ConnectionData(): room_index(-1), room_entry_index(-1), rgb_color(0){}
 	
 	bool registered()const{
-		return rgb_colour != 0;
+		return rgb_color != 0;
 	}
 	
 	void clear(){
 		room_index = -1;
 		room_entry_index = -1;
-		rgb_colour = 0;
+		rgb_color = 0;
 	}
 	
 	size_t		room_index;
 	size_t		room_entry_index;
-	uint32_t	rgb_colour;
+	uint32_t	rgb_color;
 	
 	
 };
@@ -95,14 +95,14 @@ using ColourSetT = unordered_set<uint32_t>;
 
 
 struct RoomStub{
-	RoomStub():crt_rgb_colour(0), crt_rgb_colour_step(255){}
+	RoomStub():crt_rgb_color(0), crt_rgb_color_step(255){}
 	
 	string				name;
 	ConnectionVectorT	connections;
 	FreeStackT			free_stack;
-	ColourSetT			used_colours;
-	uint32_t			crt_rgb_colour;
-	uint32_t			crt_rgb_colour_step;
+	ColourSetT			used_colors;
+	uint32_t			crt_rgb_color;
+	uint32_t			crt_rgb_color_step;
 	
 	bool empty()const{
 		return connections.size() == free_stack.size();
@@ -180,7 +180,7 @@ void Engine::onMessage(
 		if(error_id == 0){
 			_rctx.service().sendMessage(
 				_rctx.recipientId(),
-				std::make_shared<RegisterResponse>(*_rrecv_msg_ptr, rcon_data.rgb_colour)
+				std::make_shared<RegisterResponse>(*_rrecv_msg_ptr, rcon_data.rgb_color)
 			);
 		}
 	}else{
@@ -223,7 +223,7 @@ void Engine::onMessage(
 		if(rcon_data.registered()){
 			RoomStub	&room = d.rooms[rcon_data.room_index];
 			
-			_rrecv_msg_ptr->sender_rgb_colour = rcon_data.rgb_colour;
+			_rrecv_msg_ptr->sender_rgb_color = rcon_data.rgb_color;
 			
 			ConnectionStub		&rcon_sender = room.connections[rcon_data.room_entry_index];
 			
@@ -328,21 +328,21 @@ uint32_t Engine::registerConnection(
 	
 	RoomStub	&room = d.rooms[_rcon_data.room_index];
 	
-	if(_rreq.rgb_colour){
-		//client requested an explicit colour - see if it can be used
+	if(_rreq.rgb_color){
+		//client requested an explicit color - see if it can be used
 		
-		auto it = room.used_colours.find(_rreq.rgb_colour);
+		auto it = room.used_colors.find(_rreq.rgb_color);
 		
-		if(it != room.used_colours.end()){
-			_rcon_data.rgb_colour = _rreq.rgb_colour;
+		if(it != room.used_colors.end()){
+			_rcon_data.rgb_color = _rreq.rgb_color;
 		}
 	}
 	
-	if(_rcon_data.rgb_colour == 0){
-		_rcon_data.rgb_colour = createNewColour(_rcon_data.room_index);
+	if(_rcon_data.rgb_color == 0){
+		_rcon_data.rgb_color = createNewColour(_rcon_data.room_index);
 	}
 	
-	if(_rcon_data.rgb_colour == 0){
+	if(_rcon_data.rgb_color == 0){
 		_rcon_data.clear();
 		return ErrorNoColour;
 	}
@@ -362,7 +362,7 @@ uint32_t Engine::registerConnection(
 	rcon.id = _rctx.recipientId();
 	rcon.last_event_notification_ptr = std::make_shared<EventsNotification>();
 	
-	rcon.last_event_notification_ptr->sender_rgb_colour = _rcon_data.rgb_colour;
+	rcon.last_event_notification_ptr->sender_rgb_color = _rcon_data.rgb_color;
 	rcon.crt_fetch_pos = 0;
 	
 	fetchLastEvents(_rctx, _rcon_data);
@@ -383,7 +383,7 @@ void Engine::unregisterConnection(ConnectionData &_rcon_data){
 	room.connections[_rcon_data.room_entry_index].clear();
 	room.free_stack.push(_rcon_data.room_entry_index);
 	
-	room.used_colours.erase(_rcon_data.rgb_colour);
+	room.used_colors.erase(_rcon_data.rgb_color);
 	
 	if(room.empty()){
 		d.room_map.erase(&room.name);
@@ -399,19 +399,19 @@ void Engine::unregisterConnection(ConnectionData &_rcon_data){
 
 uint32_t Engine::createNewColour(const size_t _room_index){
 	RoomStub		&room = d.rooms[_room_index];
-	const uint32_t	max_rgb_colour = 0xffffff00;
+	const uint32_t	max_rgb_color = 0xffffff00;
 	
-	room.crt_rgb_colour += room.crt_rgb_colour_step;
+	room.crt_rgb_color += room.crt_rgb_color_step;
 	
-	if(room.crt_rgb_colour > max_rgb_colour){
-		if(room.crt_rgb_colour_step > 27){
-			room.crt_rgb_colour_step -= 17;
-			room.crt_rgb_colour = room.crt_rgb_colour_step;
+	if(room.crt_rgb_color > max_rgb_color){
+		if(room.crt_rgb_color_step > 27){
+			room.crt_rgb_color_step -= 17;
+			room.crt_rgb_color = room.crt_rgb_color_step;
 		}else{
 			return 0;
 		}
 	}
-	return room.crt_rgb_colour;
+	return room.crt_rgb_color;
 }
 
 }//namespace server

@@ -11,39 +11,39 @@ namespace bubbles{
 
 struct RegisterRequest: solid::frame::mpipc::Message{
 	std::string			room_name;
-	uint32_t			rgb_colour;
+	uint32_t			rgb_color;
 	
 	RegisterRequest(){}
 	
 	RegisterRequest(
 		std::string && _uroom_name,
-		uint32_t _rgb_colour
-	): room_name(std::move(_uroom_name)), rgb_colour(_rgb_colour){}
+		uint32_t _rgb_color
+	): room_name(std::move(_uroom_name)), rgb_color(_rgb_color){}
 	
 	template <class S>
 	void serialize(S &_s, solid::frame::mpipc::ConnectionContext &_rctx){
-		_s.push(room_name, "room_name").push(rgb_colour, "rgb_colour");
+		_s.push(room_name, "room_name").push(rgb_color, "rgb_color");
 	}
 };
 
 struct RegisterResponse: solid::frame::mpipc::Message{
 	uint32_t		error;
-	uint32_t		rgb_colour;
+	uint32_t		rgb_color;
 	std::string		message;
 	
 	RegisterResponse(){}
 	
 	RegisterResponse(
 		const RegisterRequest &_rrec, uint32_t _err, const std::string &_msg
-	):solid::frame::mpipc::Message(_rrec), error(_err), rgb_colour(0), message(_msg){}
+	):solid::frame::mpipc::Message(_rrec), error(_err), rgb_color(0), message(_msg){}
 	
 	RegisterResponse(
-		const RegisterRequest &_rrec, uint32_t _rgb_colour
-	): error(0), rgb_colour(_rgb_colour){}
+		const RegisterRequest &_rrec, uint32_t _rgb_color
+	): error(0), rgb_color(_rgb_color){}
 	
 	template <class S>
 	void serialize(S &_s, solid::frame::mpipc::ConnectionContext &_rctx){
-		_s.push(error, "error").push(rgb_colour, "rgb_colour").push(message, "message");
+		_s.push(error, "error").push(rgb_color, "rgb_color").push(message, "message");
 	}
 };
 
@@ -92,7 +92,7 @@ struct EventsNotification: solid::frame::mpipc::Message{
 	using EventVectorT = std::vector<Event>;
 	
 	ConnectionId	connection_id;
-	uint32_t		sender_rgb_colour;
+	uint32_t		sender_rgb_color;
 	Event			main_event;
 	EventVectorT	events;
 	std::string		text;
@@ -103,7 +103,7 @@ struct EventsNotification: solid::frame::mpipc::Message{
 	void serialize(S &_s, solid::frame::mpipc::ConnectionContext &_rctx){
 		_s.pushContainerLimit();//back to default
 		_s.pushStringLimit();//back to default
-		_s.push(text, "text").pushContainer(events, "events").push(main_event, "main_event").push(sender_rgb_colour, "sender_rgb_colour").push(connection_id, "connection_id");
+		_s.push(text, "text").pushContainer(events, "events").push(main_event, "main_event").push(sender_rgb_color, "sender_rgb_color").push(connection_id, "connection_id");
 		_s.pushContainerLimit(1024);
 		_s.pushStringLimit(1024);
 	}
