@@ -99,6 +99,11 @@ struct EventsNotification: solid::frame::mpipc::Message{
 	
 	EventsNotification(){}
 	
+	void clear(){
+		events.clear();
+		text.clear();
+	}
+	
 	template <class S>
 	void serialize(S &_s, solid::frame::mpipc::ConnectionContext &_rctx){
 		_s.pushContainerLimit();//back to default

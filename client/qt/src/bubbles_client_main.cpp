@@ -10,6 +10,9 @@
 
 #include "solid/frame/aio/aioresolver.hpp"
 
+#include "solid/frame/reactor.hpp"
+#include "solid/frame/service.hpp"
+
 #include "solid/frame/mpipc/mpipcservice.hpp"
 #include "solid/frame/mpipc/mpipcconfiguration.hpp"
 
@@ -24,6 +27,7 @@ using namespace solid;
 using namespace std;
 
 using AioSchedulerT = frame::Scheduler<frame::aio::Reactor>;
+using SchedulerT = frame::Scheduler<frame::Reactor>;
 
 //-----------------------------------------------------------------------------
 //		Parameters
@@ -53,6 +57,8 @@ struct Parameters{
 	string					connect_endpoint;
 	string					connect_addr;
 	string					connect_port;
+	
+	string					room_name;
 };
 
 //-----------------------------------------------------------------------------
@@ -212,22 +218,24 @@ int main(int argc, char *argv[]){
 #endif
 
 
-	QApplication 				app(argc, argv);
+	QApplication 						app(argc, argv);
 	
-	AioSchedulerT				scheduler;
+	AioSchedulerT						aioscheduler;
+	SchedulerT							scheduler;
 	
 	
-	frame::Manager				manager;
-	frame::mpipc::ServiceT		ipcservice{manager};
+	frame::Manager						manager;
+	frame::mpipc::ServiceT				ipcservice{manager};
+	frame::ServiceT						service{manager};
 	
-	frame::aio::Resolver		resolver;
+	frame::aio::Resolver				resolver;
 	
-	ErrorConditionT				err;
-	bubbles::client::Engine		engine{ipcservice};
+	ErrorConditionT						err;
+	bubbles::client::Engine::PointerT	engine_ptr{bubbles::client::Engine::create(service, ipcservice, bubbles::client::EngineConfiguration{})};
 	
-	bubbles::client::Widget		widget{engine};
+	bubbles::client::Widget				widget{engine_ptr};
 	
-	err = scheduler.start(1);
+	err = aioscheduler.start(1);
 	
 	if(err){
 		cout<<"Error starting aio scheduler: "<<err.message()<<endl;
@@ -241,11 +249,18 @@ int main(int argc, char *argv[]){
 		return 1;
 	}
 	
+	err = scheduler.start(1);
+	
+	if(err){
+		cout<<"Error starting scheduler: "<<err.message()<<endl;
+		return 1;
+	}
+	
 	{
 		auto 						proto = frame::mpipc::serialization_v1::Protocol::create(serialization::binary::Limits(256, 128, 0));//small limits by default
-		frame::mpipc::Configuration	cfg(scheduler, proto);
+		frame::mpipc::Configuration	cfg(aioscheduler, proto);
 		
-		bubbles::ProtoSpecT::setup<bubbles::client::MessageSetup>(*proto, 0, std::ref(engine));
+		bubbles::ProtoSpecT::setup<bubbles::client::MessageSetup>(*proto, 0, std::ref(*engine_ptr));
 		
 		cfg.client.name_resolve_fnc = frame::mpipc::InternetResolverF(resolver, p.connect_port.c_str());
 		
@@ -259,7 +274,12 @@ int main(int argc, char *argv[]){
 		}
 	}
 	
-	//engine.start(p.connect_endpoint);
+	err = engine_ptr->start(scheduler, p.connect_endpoint, p.room_name);
+	
+	if(err){
+		cout<<"Error starting engine: "<<err.message()<<endl;
+		return 1;
+	}
 	
 	widget.show();
 	
@@ -282,6 +302,7 @@ bool parseArguments(Parameters &_par, int argc, char *argv[]){
 			("debug-unbuffered,S", value<bool>(&_par.dbg_buffered)->implicit_value(false)->default_value(true), "Debug unbuffered")
 			
 			("connect,c", value<std::string>(&_par.connect_endpoint)->default_value("localhost:2000"), "Server endpoint: address:port")
+			("room,r", value<std::string>(&_par.room_name)->default_value("test"), "Connect room")
 			("secure,s", value<bool>(&_par.secure)->implicit_value(true)->default_value(false), "Use SSL to secure communication")
 		;
 		variables_map vm;

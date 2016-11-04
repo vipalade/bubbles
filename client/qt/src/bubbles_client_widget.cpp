@@ -9,8 +9,8 @@
 namespace bubbles{
 namespace client{
 
-Widget::Widget(Engine &_engine, QWidget *parent)
-    : QWidget(parent), engine(_engine)
+Widget::Widget(Engine::PointerT &_engine_ptr, QWidget *parent)
+    : QWidget(parent), engine_ptr(_engine_ptr)
 {
     antialiased = true;
     

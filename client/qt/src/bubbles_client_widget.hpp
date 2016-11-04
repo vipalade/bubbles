@@ -2,6 +2,8 @@
 #define BUBBLES_CLIENT_WIDGET_HPP
 
 #include <QWidget>
+#include "client/engine/bubbles_client_engine.hpp"
+
 
 namespace bubbles{
 namespace client{
@@ -13,7 +15,7 @@ class Widget : public QWidget
     Q_OBJECT
 
 public:
-    Widget(Engine &_engine, QWidget *parent = 0);
+    Widget(Engine::PointerT &_engine_ptr, QWidget *parent = 0);
 
     void setFloatBased(bool floatBased);
     void setAntialiased(bool antialiased);
@@ -29,10 +31,10 @@ protected:
     void resizeEvent(QResizeEvent *event) Q_DECL_OVERRIDE;
     
 private:
-    bool		antialiased;
-	QPoint		pos;
-	bool		moving;
-	Engine		&engine;
+    bool				antialiased;
+	QPoint				pos;
+	bool				moving;
+	Engine::PointerT	&engine_ptr;
 };
 
 }//namespace client
