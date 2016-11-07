@@ -266,6 +266,17 @@ int main(int argc, char *argv[]){
 		
 		cfg.client.connection_start_state = frame::mpipc::ConnectionState::Passive;
 		
+		{
+			auto connection_stop_lambda = [engine_ptr](frame::mpipc::ConnectionContext &_ctx){
+				engine_ptr->onConnectionStop(_ctx);
+			};
+			auto connection_start_lambda = [engine_ptr](frame::mpipc::ConnectionContext &_ctx){
+				engine_ptr->onConnectionStart(_ctx);
+			};
+			cfg.connection_stop_fnc = connection_stop_lambda;
+			cfg.client.connection_start_fnc = connection_start_lambda;
+		}
+		
 		err = ipcservice.reconfigure(std::move(cfg));
 		
 		if(err){

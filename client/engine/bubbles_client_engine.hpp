@@ -39,18 +39,14 @@ public:
 	solid::ErrorConditionT start(
 		SchedulerT &_rsched,
 		const std::string &_server_endpoint,
-		const std::string &_room_name
+		const std::string &_room_name,
+		uint32_t _rgb_color = 0
 	);
 	
 	void moveEvent(int _x, int _y);
+	void onConnectionStart(solid::frame::mpipc::ConnectionContext &_rctx);
+	void onConnectionStop(solid::frame::mpipc::ConnectionContext &_rctx);
 	
-private:
-	Engine(
-		solid::frame::ServiceT &_rsvc, solid::frame::mpipc::Service &_rmpipc,
-		const EngineConfiguration &_cfg
-	);
-	~Engine();
-public:
 	void onMessage(
 		solid::frame::mpipc::ConnectionContext &_rctx,
 		std::shared_ptr<RegisterRequest> &_rsent_msg_ptr,
@@ -67,11 +63,24 @@ public:
 	
 	void onMessage(
 		solid::frame::mpipc::ConnectionContext &_rctx,
+		std::shared_ptr<InitNotification> &_rsent_msg_ptr,
+		std::shared_ptr<InitNotification> &_rrecv_msg_ptr,
+		solid::ErrorConditionT const &_rerror
+	);
+	
+	void onMessage(
+		solid::frame::mpipc::ConnectionContext &_rctx,
 		std::shared_ptr<EventsNotificationRequest> &_rsent_msg_ptr,
 		std::shared_ptr<EventsNotificationResponse> &_rrecv_msg_ptr,
 		solid::ErrorConditionT const &_rerror
 	);
 private:
+	Engine(
+		solid::frame::ServiceT &_rsvc, solid::frame::mpipc::Service &_rmpipc,
+		const EngineConfiguration &_cfg
+	);
+	~Engine();
+	
 	void onEvent(solid::frame::ReactorContext &_rctx, solid::Event &&_uevent) override;
 	void doTrySendEvents(std::shared_ptr<EventsNotification> &&_rrecv_msg_ptr = std::shared_ptr<EventsNotification>{});
 private:

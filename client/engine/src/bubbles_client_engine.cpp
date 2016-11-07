@@ -23,7 +23,7 @@ struct Engine::Data{
 		solid::frame::ServiceT &_rsvc,
 		solid::frame::mpipc::Service &_rmpipc,
 		const EngineConfiguration &_cfg
-	):rmpipc(_rmpipc), service(_rsvc), cfg(_cfg), push_eventq_idx(0), pop_eventq_idx(1), discarded_on_push(false){}
+	):rmpipc(_rmpipc), service(_rsvc), cfg(_cfg), push_eventq_idx(0), pop_eventq_idx(1), discarded_on_push(false), rgb_color(0){}
 	
 	void discardPopEventQ(){
 		EventQueueT &eq = eventq[pop_eventq_idx];
@@ -41,6 +41,8 @@ struct Engine::Data{
 	size_t									push_eventq_idx;
 	size_t									pop_eventq_idx;
 	bool 									discarded_on_push;
+	uint32_t								rgb_color;
+	Event									last_event;
 	std::shared_ptr<EventsNotification>		events_message_ptr;
 };
 
@@ -56,7 +58,8 @@ Engine::~Engine(){
 solid::ErrorConditionT Engine::start(
 	SchedulerT &_rsched,
 	const std::string &_server_endpoint,
-	const std::string &_room_name
+	const std::string &_room_name,
+	uint32_t _rgb_color
 ){
 	solid::ErrorConditionT					err;
 	if(not this->isRunning()){
@@ -131,13 +134,34 @@ void Engine::doTrySendEvents(std::shared_ptr<EventsNotification> &&_rrecv_msg_pt
 	if(pop_eventq_idx < 2){
 		//we can fill events_message_ptr and send it to server
 		EventQueueT &reventq = d.eventq[pop_eventq_idx];
+		
+		d.last_event = reventq.back();
+		
 		d.events_message_ptr->main_event = reventq.front();
 		reventq.pop();
+		
 		while(reventq.size() and d.events_message_ptr->events.size() < 1000){
 			d.events_message_ptr->events.push_back(reventq.front());
 			reventq.pop();
 		}
+		
 		std::shared_ptr<EventsNotification> tmp_ptr{std::move(d.events_message_ptr)};
+		d.rmpipc.sendMessage(d.server_endpoint.c_str(), tmp_ptr);
+	}
+}
+
+void Engine::onConnectionStart(solid::frame::mpipc::ConnectionContext &_rctx){
+	auto msg_ptr = std::make_shared<RegisterRequest>(d.room_name, d.rgb_color);
+	_rctx.service().sendMessage(_rctx.recipientId(), msg_ptr, 0|frame::mpipc::MessageFlags::WaitResponse);
+}
+
+void Engine::onConnectionStop(solid::frame::mpipc::ConnectionContext &_rctx){
+	if(d.events_message_ptr){
+		//connection stopped and there is no activity to send, resend the last event
+		d.events_message_ptr->main_event = d.last_event;
+		
+		std::shared_ptr<EventsNotification> tmp_ptr{std::move(d.events_message_ptr)};
+		
 		d.rmpipc.sendMessage(d.server_endpoint.c_str(), tmp_ptr);
 	}
 }
@@ -146,6 +170,16 @@ void Engine::onMessage(
 	solid::frame::mpipc::ConnectionContext &_rctx,
 	std::shared_ptr<RegisterRequest> &_rsent_msg_ptr,
 	std::shared_ptr<RegisterResponse> &_rrecv_msg_ptr,
+	solid::ErrorConditionT const &_rerror
+){
+	idbg(_rctx.recipientId()<<" error: "<<_rerror.message());
+}
+
+
+void Engine::onMessage(
+	solid::frame::mpipc::ConnectionContext &_rctx,
+	std::shared_ptr<InitNotification> &_rsent_msg_ptr,
+	std::shared_ptr<InitNotification> &_rrecv_msg_ptr,
 	solid::ErrorConditionT const &_rerror
 ){
 	idbg(_rctx.recipientId()<<" error: "<<_rerror.message());

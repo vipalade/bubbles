@@ -146,6 +146,16 @@ int main(int argc, char *argv[]){
 			
 			cfg.server.connection_start_state = frame::mpipc::ConnectionState::Active;
 			//cfg.pool_max_message_queue_size
+			{
+				auto connection_stop_lambda = [&engine](frame::mpipc::ConnectionContext &_ctx){
+					engine.onConnectionStop(_ctx);
+				};
+				auto connection_start_lambda = [&engine](frame::mpipc::ConnectionContext &_ctx){
+					engine.onConnectionStart(_ctx);
+				};
+				cfg.connection_stop_fnc = connection_stop_lambda;
+				cfg.server.connection_start_fnc = connection_start_lambda;
+			}
 			
 			err = ipcservice.reconfigure(std::move(cfg));
 			

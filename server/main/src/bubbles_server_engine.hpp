@@ -52,6 +52,13 @@ public:
 	
 	void onMessage(
 		solid::frame::mpipc::ConnectionContext &_rctx,
+		std::shared_ptr<InitNotification> &_rsent_msg_ptr,
+		std::shared_ptr<InitNotification> &_rrecv_msg_ptr,
+		solid::ErrorConditionT const &_rerror
+	);
+	
+	void onMessage(
+		solid::frame::mpipc::ConnectionContext &_rctx,
 		std::shared_ptr<EventsNotification> &_rsent_msg_ptr,
 		std::shared_ptr<EventsNotification> &_rrecv_msg_ptr,
 		solid::ErrorConditionT const &_rerror
@@ -78,14 +85,18 @@ private:
 	uint32_t registerConnection(
 		solid::frame::mpipc::ConnectionContext &_rctx,
 		ConnectionData &_rcon_data,
-		const RegisterRequest &_rreq
+		const RegisterRequest &_rreq,
+		uint32_t &_rrgb_color
 	);
 	
-	void unregisterConnection(ConnectionData &_rcon_data);
+	void unregisterConnection(solid::frame::mpipc::ConnectionContext &_rctx, ConnectionData &_rcon_data);
 	
 	uint32_t createNewColour(const size_t _room_index);
 	
-	void fetchLastEvents(solid::frame::mpipc::ConnectionContext &_rctx, ConnectionData &_rcon_data);
+	void fetchLastEvents(
+		solid::frame::mpipc::ConnectionContext &_rctx, ConnectionData &_rcon_data,
+		std::shared_ptr<InitNotification> &&_rsent_msg_ptr
+	);
 private:
 	struct Data;
 	Data &d;

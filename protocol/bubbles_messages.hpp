@@ -6,6 +6,7 @@
 #include "solid/frame/mpipc/mpipcprotocol_serialization_v1.hpp"
 
 #include <vector>
+#include <deque>
 
 namespace bubbles{
 
@@ -16,9 +17,9 @@ struct RegisterRequest: solid::frame::mpipc::Message{
 	RegisterRequest(){}
 	
 	RegisterRequest(
-		std::string && _uroom_name,
+		const std::string &_uroom_name,
 		uint32_t _rgb_color
-	): room_name(std::move(_uroom_name)), rgb_color(_rgb_color){}
+	): room_name(_uroom_name), rgb_color(_rgb_color){}
 	
 	template <class S>
 	void serialize(S &_s, solid::frame::mpipc::ConnectionContext &_rctx){
@@ -69,10 +70,18 @@ struct ConnectionId{
 struct Event{
 	enum Types{
 		Unknown = 0,
-		PointerMove,
+		PointerMove
 	};
 	
 	Event(): type(Unknown), flags(0), x(0), y(0), data(0){}
+	
+	void clear(){
+		type = Unknown;
+		flags = 0;
+		x = 0;
+		y = 0;
+		data = 0;
+	}
 	
 	template <class S>
 	void serialize(S &_s, solid::frame::mpipc::ConnectionContext &_rctx){
@@ -85,6 +94,40 @@ struct Event{
 	int32_t		y;
 	uint64_t	data;
 	uint32_t	diff_time_msec;
+};
+
+struct InitEventStub{
+	
+	Event 			event;
+	ConnectionId	connection_id;
+	uint32_t		sender_rgb_color;
+	std::string		text;
+	
+	template <class S>
+	void serialize(S &_s, solid::frame::mpipc::ConnectionContext &_rctx){
+		_s.push(text, "text").push(event, "event").push(sender_rgb_color, "sender_rgb_color").push(connection_id, "connection_id");
+	}
+};
+
+struct InitNotification: solid::frame::mpipc::Message{
+	using EventDequeT = std::deque<InitEventStub>;
+	
+	static size_t containerLimit(){
+		return 1024;
+	}
+	
+	EventDequeT		events;
+	
+	template <class S>
+	void serialize(S &_s, solid::frame::mpipc::ConnectionContext &_rctx){
+		_s.pushContainerLimit();//back to default
+		_s.pushStringLimit();//back to default
+		
+		_s.pushContainer(events, "events");
+		
+		_s.pushContainerLimit(containerLimit());
+		_s.pushStringLimit(1024);
+	}
 };
 
 //Push notification - no guarantee and no feedback for delivery
@@ -142,7 +185,7 @@ struct EventsNotificationResponse: solid::frame::mpipc::Message{
 };
 
 using ProtoSpecT = solid::frame::mpipc::serialization_v1::ProtoSpec<
-	0, RegisterRequest, RegisterResponse, EventsNotification,
+	0, RegisterRequest, RegisterResponse, InitNotification, EventsNotification,
 	EventsNotificationRequest, EventsNotificationResponse
 >;
 
