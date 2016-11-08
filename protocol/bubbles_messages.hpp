@@ -17,9 +17,9 @@ struct RegisterRequest: solid::frame::mpipc::Message{
 	RegisterRequest(){}
 	
 	RegisterRequest(
-		const std::string &_uroom_name,
+		const std::string &_rroom_name,
 		uint32_t _rgb_color
-	): room_name(_uroom_name), rgb_color(_rgb_color){}
+	): room_name(_rroom_name), rgb_color(_rgb_color){}
 	
 	template <class S>
 	void serialize(S &_s, solid::frame::mpipc::ConnectionContext &_rctx){
@@ -42,6 +42,10 @@ struct RegisterResponse: solid::frame::mpipc::Message{
 		const RegisterRequest &_rrec, uint32_t _rgb_color
 	): error(0), rgb_color(_rgb_color){}
 	
+	bool success()const{
+		return error == 0;
+	}
+	
 	template <class S>
 	void serialize(S &_s, solid::frame::mpipc::ConnectionContext &_rctx){
 		_s.push(error, "error").push(rgb_color, "rgb_color").push(message, "message");
@@ -61,6 +65,11 @@ struct ConnectionId{
 		return server_idx != solid::InvalidIndex();
 	}
 	
+	void clear(){
+		server_idx = solid::InvalidIndex();
+		connection_idx = solid::InvalidIndex();
+	}
+	
 	template <class S>
 	void serialize(S &_s, solid::frame::mpipc::ConnectionContext &_rctx){
 		_s.push(server_idx, "server_idx").push(server_unq, "server_unq").push(connection_idx, "connection_idx").push(connection_unq, "connection_unq");
@@ -70,10 +79,11 @@ struct ConnectionId{
 struct Event{
 	enum Types{
 		Unknown = 0,
-		PointerMove
+		PointerMove,
+		Sentinel
 	};
 	
-	Event(): type(Unknown), flags(0), x(0), y(0), data(0){}
+	Event(uint16_t _type = Unknown): type(_type), flags(0), x(0), y(0), data(0){}
 	
 	void clear(){
 		type = Unknown;
@@ -96,62 +106,96 @@ struct Event{
 	uint32_t	diff_time_msec;
 };
 
-struct InitEventStub{
+// struct InitEventStub{
+// 	
+// 	Event 			event;
+// 	ConnectionId	connection_id;
+// 	uint32_t		sender_rgb_color;
+// 	std::string		text;
+// 	
+// 	template <class S>
+// 	void serialize(S &_s, solid::frame::mpipc::ConnectionContext &_rctx){
+// 		_s.push(text, "text").push(event, "event").push(sender_rgb_color, "sender_rgb_color").push(connection_id, "connection_id");
+// 	}
+// };
+// 
+// struct InitNotification: solid::frame::mpipc::Message{
+// 	using EventDequeT = std::deque<InitEventStub>;
+// 	
+// 	static size_t containerLimit(){
+// 		return 1024;
+// 	}
+// 	
+// 	EventDequeT		events;
+// 	
+// 	template <class S>
+// 	void serialize(S &_s, solid::frame::mpipc::ConnectionContext &_rctx){
+// 		_s.pushContainerLimit();//back to default
+// 		_s.pushStringLimit();//back to default
+// 		
+// 		_s.pushContainer(events, "events");
+// 		
+// 		_s.pushContainerLimit(containerLimit());
+// 		_s.pushStringLimit(1024);
+// 	}
+// };
+
+struct EventStub{
+	using EventVectorT = std::vector<Event>;
 	
 	Event 			event;
 	ConnectionId	connection_id;
 	uint32_t		sender_rgb_color;
 	std::string		text;
+	EventVectorT	events;
+	
+	bool empty()const{
+		return event.type == Event::Unknown;
+	}
+	
+	EventStub(uint16_t _event_type = Event::Unknown): event(_event_type){}
+	
+	void clear(){
+		event.clear();
+		connection_id.clear();
+		text.clear();
+		events.clear();
+	}
 	
 	template <class S>
 	void serialize(S &_s, solid::frame::mpipc::ConnectionContext &_rctx){
-		_s.push(text, "text").push(event, "event").push(sender_rgb_color, "sender_rgb_color").push(connection_id, "connection_id");
-	}
-};
-
-struct InitNotification: solid::frame::mpipc::Message{
-	using EventDequeT = std::deque<InitEventStub>;
-	
-	static size_t containerLimit(){
-		return 1024;
-	}
-	
-	EventDequeT		events;
-	
-	template <class S>
-	void serialize(S &_s, solid::frame::mpipc::ConnectionContext &_rctx){
-		_s.pushContainerLimit();//back to default
-		_s.pushStringLimit();//back to default
-		
 		_s.pushContainer(events, "events");
-		
-		_s.pushContainerLimit(containerLimit());
-		_s.pushStringLimit(1024);
+		_s.push(text, "text").push(event, "event").push(sender_rgb_color, "sender_rgb_color").push(connection_id, "connection_id");
 	}
 };
 
 //Push notification - no guarantee and no feedback for delivery
 struct EventsNotification: solid::frame::mpipc::Message{
-	using EventVectorT = std::vector<Event>;
 	
-	ConnectionId	connection_id;
-	uint32_t		sender_rgb_color;
-	Event			main_event;
-	EventVectorT	events;
-	std::string		text;
+	using EventStubDequeT	= std::deque<EventStub>;
 	
-	EventsNotification(){}
+	EventStub			event_stub;
+	EventStubDequeT		event_stubs;
+	bool				is_init;//not serialized - used on server
+	
+	static size_t containerLimit(){
+		return 1024;
+	}
+	
+	EventsNotification():is_init(false){}
 	
 	void clear(){
-		events.clear();
-		text.clear();
+		event_stubs.clear();
+		event_stub.clear();
 	}
 	
 	template <class S>
 	void serialize(S &_s, solid::frame::mpipc::ConnectionContext &_rctx){
 		_s.pushContainerLimit();//back to default
 		_s.pushStringLimit();//back to default
-		_s.push(text, "text").pushContainer(events, "events").push(main_event, "main_event").push(sender_rgb_color, "sender_rgb_color").push(connection_id, "connection_id");
+		
+		_s.push(event_stub, "event_stub").pushContainer(event_stubs, "event_stubs");
+		
 		_s.pushContainerLimit(1024);
 		_s.pushStringLimit(1024);
 	}
@@ -185,7 +229,7 @@ struct EventsNotificationResponse: solid::frame::mpipc::Message{
 };
 
 using ProtoSpecT = solid::frame::mpipc::serialization_v1::ProtoSpec<
-	0, RegisterRequest, RegisterResponse, InitNotification, EventsNotification,
+	0, RegisterRequest, RegisterResponse, /*InitNotification,*/ EventsNotification,
 	EventsNotificationRequest, EventsNotificationResponse
 >;
 

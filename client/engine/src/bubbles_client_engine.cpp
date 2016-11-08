@@ -23,7 +23,8 @@ struct Engine::Data{
 		solid::frame::ServiceT &_rsvc,
 		solid::frame::mpipc::Service &_rmpipc,
 		const EngineConfiguration &_cfg
-	):rmpipc(_rmpipc), service(_rsvc), cfg(_cfg), push_eventq_idx(0), pop_eventq_idx(1), discarded_on_push(false), rgb_color(0){}
+	):	rmpipc(_rmpipc), service(_rsvc), cfg(_cfg), push_eventq_idx(0), pop_eventq_idx(1),
+		push_messageq_idx(0), pop_messageq_idx(1), discarded_on_push(false), rgb_color(0){}
 	
 	void discardPopEventQ(){
 		EventQueueT &eq = eventq[pop_eventq_idx];
@@ -40,10 +41,16 @@ struct Engine::Data{
 	
 	size_t									push_eventq_idx;
 	size_t									pop_eventq_idx;
+	
+	size_t									push_messageq_idx;
+	size_t									pop_messageq_idx;
+	
 	bool 									discarded_on_push;
 	uint32_t								rgb_color;
 	Event									last_event;
 	std::shared_ptr<EventsNotification>		events_message_ptr;
+	ExitFunctionT							exit_function;
+	GuiUpdateFunctionT						gui_update_function;
 };
 
 Engine::Engine(
@@ -61,7 +68,9 @@ solid::ErrorConditionT Engine::start(
 	const std::string &_room_name,
 	uint32_t _rgb_color
 ){
+	idbg("");
 	solid::ErrorConditionT					err;
+	
 	if(not this->isRunning()){
 		solid::DynamicPointer<frame::Object>	objptr(this);//its save - pointer count is kept by this pointer
 		_rsched.startObject(objptr, d.service, solid::generic_event_category.event(solid::GenericEvents::Start), err);
@@ -74,8 +83,11 @@ solid::ErrorConditionT Engine::start(
 }
 
 void Engine::moveEvent(int _x, int _y){
-	std::unique_lock<std::mutex> lock(d.service.mutex(*this));
-	EventQueueT &reventq = d.eventq[d.push_eventq_idx];
+	
+	idbg(_x<<':'<<_y);
+	
+	std::unique_lock<std::mutex>	lock(d.service.mutex(*this));
+	EventQueueT 					&reventq = d.eventq[d.push_eventq_idx];
 	
 	if((reventq.size() + 1) == d.cfg.max_event_queue_size){
 		reventq.pop();
@@ -91,6 +103,7 @@ void Engine::moveEvent(int _x, int _y){
 }
 
 void Engine::onEvent(frame::ReactorContext &_rctx, solid::Event &&_uevent) /*override*/{
+	idbg(" event = "<<_uevent);
 	if(generic_event_category.event(GenericEvents::Start) == _uevent){
 		
 		d.events_message_ptr = std::make_shared<EventsNotification>();
@@ -103,6 +116,7 @@ void Engine::onEvent(frame::ReactorContext &_rctx, solid::Event &&_uevent) /*ove
 }
 
 void Engine::doTrySendEvents(std::shared_ptr<EventsNotification> &&_rrecv_msg_ptr /*= std::shared_ptr<EventsNotification>{}*/){
+	idbg("");
 	size_t		pop_eventq_idx = 0;
 	{
 		std::unique_lock<std::mutex> lock(d.service.mutex(*this));
@@ -151,11 +165,13 @@ void Engine::doTrySendEvents(std::shared_ptr<EventsNotification> &&_rrecv_msg_pt
 }
 
 void Engine::onConnectionStart(solid::frame::mpipc::ConnectionContext &_rctx){
+	idbg(_rctx.recipientId());
 	auto msg_ptr = std::make_shared<RegisterRequest>(d.room_name, d.rgb_color);
 	_rctx.service().sendMessage(_rctx.recipientId(), msg_ptr, 0|frame::mpipc::MessageFlags::WaitResponse);
 }
 
 void Engine::onConnectionStop(solid::frame::mpipc::ConnectionContext &_rctx){
+	idbg(_rctx.recipientId());
 	if(d.events_message_ptr){
 		//connection stopped and there is no activity to send, resend the last event
 		d.events_message_ptr->main_event = d.last_event;
@@ -166,23 +182,32 @@ void Engine::onConnectionStop(solid::frame::mpipc::ConnectionContext &_rctx){
 	}
 }
 
+void Engine::doSetExitFunction(ExitFunctionT &&_uf){
+	d.exit_function = std::move(_uf);
+}
+void Engine::doSetGuiUpdateFunction(GuiUpdateFunctionT &&_uf){
+	d.gui_update_function = std::move(_uf);
+}
+
 void Engine::onMessage(
 	solid::frame::mpipc::ConnectionContext &_rctx,
 	std::shared_ptr<RegisterRequest> &_rsent_msg_ptr,
 	std::shared_ptr<RegisterResponse> &_rrecv_msg_ptr,
 	solid::ErrorConditionT const &_rerror
 ){
+	
 	idbg(_rctx.recipientId()<<" error: "<<_rerror.message());
-}
-
-
-void Engine::onMessage(
-	solid::frame::mpipc::ConnectionContext &_rctx,
-	std::shared_ptr<InitNotification> &_rsent_msg_ptr,
-	std::shared_ptr<InitNotification> &_rrecv_msg_ptr,
-	solid::ErrorConditionT const &_rerror
-){
-	idbg(_rctx.recipientId()<<" error: "<<_rerror.message());
+	
+	if(_rrecv_msg_ptr and _rrecv_msg_ptr->success()){
+		d.rgb_color = _rrecv_msg_ptr->rgb_color;
+		
+		//after activation, the mpipc will start sending pending EventsNotification messages
+		_rctx.service().connectionNotifyEnterActiveState(_rctx.recipientId());
+	}else if(_rrecv_msg_ptr){
+		//failed registering the connection
+		edbg(_rctx.recipientId()<<" Connection registration failed because ["<<_rrecv_msg_ptr->message<<"]. Exiting");
+		d.exit_function();
+	}
 }
 
 void Engine::onMessage(
@@ -192,6 +217,7 @@ void Engine::onMessage(
 	solid::ErrorConditionT const &_rerror
 ){
 	idbg(_rctx.recipientId()<<" error: "<<_rerror.message());
+	
 	if(_rsent_msg_ptr){
 		_rsent_msg_ptr->clear();
 		doTrySendEvents(std::move(_rsent_msg_ptr));

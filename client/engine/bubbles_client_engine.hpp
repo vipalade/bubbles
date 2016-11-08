@@ -7,6 +7,7 @@
 #include "solid/frame/reactor.hpp"
 #include "solid/frame/service.hpp"
 #include "solid/utility/dynamicpointer.hpp"
+#include <functional>
 
 namespace solid{namespace frame{
 namespace mpipc{
@@ -26,6 +27,8 @@ struct EngineConfiguration{
 };
 
 class Engine: public solid::Dynamic<Engine, solid::frame::Object>{
+	using ExitFunctionT = std::function<void()>;
+	using GuiUpdateFunctionT = std::function<void()>;
 public:
 	using PointerT = solid::DynamicPointer<Engine>;
 	
@@ -42,6 +45,18 @@ public:
 		const std::string &_room_name,
 		uint32_t _rgb_color = 0
 	);
+	
+	template <class F>
+	void setExitFunction(F _f){
+		ExitFunctionT	f{_f};
+		doSetExitFunction(std::move(f));
+	}
+	
+	template <class F>
+	void setGuiUpdateFunction(F _f){
+		GuiUpdateFunctionT f{_f};
+		doSetGuiUpdateFunction(std::move(f));
+	}
 	
 	void moveEvent(int _x, int _y);
 	void onConnectionStart(solid::frame::mpipc::ConnectionContext &_rctx);
@@ -63,13 +78,6 @@ public:
 	
 	void onMessage(
 		solid::frame::mpipc::ConnectionContext &_rctx,
-		std::shared_ptr<InitNotification> &_rsent_msg_ptr,
-		std::shared_ptr<InitNotification> &_rrecv_msg_ptr,
-		solid::ErrorConditionT const &_rerror
-	);
-	
-	void onMessage(
-		solid::frame::mpipc::ConnectionContext &_rctx,
 		std::shared_ptr<EventsNotificationRequest> &_rsent_msg_ptr,
 		std::shared_ptr<EventsNotificationResponse> &_rrecv_msg_ptr,
 		solid::ErrorConditionT const &_rerror
@@ -83,6 +91,9 @@ private:
 	
 	void onEvent(solid::frame::ReactorContext &_rctx, solid::Event &&_uevent) override;
 	void doTrySendEvents(std::shared_ptr<EventsNotification> &&_rrecv_msg_ptr = std::shared_ptr<EventsNotification>{});
+	
+	void doSetExitFunction(ExitFunctionT &&_uf);
+	void doSetGuiUpdateFunction(GuiUpdateFunctionT &&_uf);
 private:
 	struct Data;
 	Data	&d;

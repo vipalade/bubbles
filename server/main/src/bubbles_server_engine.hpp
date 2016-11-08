@@ -52,13 +52,6 @@ public:
 	
 	void onMessage(
 		solid::frame::mpipc::ConnectionContext &_rctx,
-		std::shared_ptr<InitNotification> &_rsent_msg_ptr,
-		std::shared_ptr<InitNotification> &_rrecv_msg_ptr,
-		solid::ErrorConditionT const &_rerror
-	);
-	
-	void onMessage(
-		solid::frame::mpipc::ConnectionContext &_rctx,
 		std::shared_ptr<EventsNotification> &_rsent_msg_ptr,
 		std::shared_ptr<EventsNotification> &_rrecv_msg_ptr,
 		solid::ErrorConditionT const &_rerror
@@ -95,7 +88,7 @@ private:
 	
 	void fetchLastEvents(
 		solid::frame::mpipc::ConnectionContext &_rctx, ConnectionData &_rcon_data,
-		std::shared_ptr<InitNotification> &&_rsent_msg_ptr
+		std::shared_ptr<EventsNotification> &&_rmsg_ptr
 	);
 private:
 	struct Data;

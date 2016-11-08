@@ -210,28 +210,28 @@ void Engine::onMessage(
 	}
 }
 
-void Engine::onMessage(
-	solid::frame::mpipc::ConnectionContext &_rctx,
-	std::shared_ptr<InitNotification> &_rsent_msg_ptr,
-	std::shared_ptr<InitNotification> &_rrecv_msg_ptr,
-	solid::ErrorConditionT const &_rerror
-){
-	if(_rsent_msg_ptr){
-		idbg(_rctx.recipientId()<<" error: "<<_rerror.message());
-		
-		ConnectionData 		&rcon_data = *_rctx.any().cast<ConnectionData>();
-			
-		RoomStub			&room = d.rooms[rcon_data.room_index];
-		ConnectionStub		&rcon = room.connections[rcon_data.room_entry_index];
-		
-		rcon.pending_count -= (1 + _rsent_msg_ptr->events.size());
-		
-		
-		if(rcon.crt_fetch_pos < room.connections.size()){
-			fetchLastEvents(_rctx, rcon_data, std::move(_rsent_msg_ptr));
-		}
-	}
-}
+// void Engine::onMessage(
+// 	solid::frame::mpipc::ConnectionContext &_rctx,
+// 	std::shared_ptr<InitNotification> &_rsent_msg_ptr,
+// 	std::shared_ptr<InitNotification> &_rrecv_msg_ptr,
+// 	solid::ErrorConditionT const &_rerror
+// ){
+// 	if(_rsent_msg_ptr){
+// 		idbg(_rctx.recipientId()<<" error: "<<_rerror.message());
+// 		
+// 		ConnectionData 		&rcon_data = *_rctx.any().cast<ConnectionData>();
+// 			
+// 		RoomStub			&room = d.rooms[rcon_data.room_index];
+// 		ConnectionStub		&rcon = room.connections[rcon_data.room_entry_index];
+// 		
+// 		rcon.pending_count -= (1 + _rsent_msg_ptr->events.size());
+// 		
+// 		
+// 		if(rcon.crt_fetch_pos < room.connections.size()){
+// 			fetchLastEvents(_rctx, rcon_data, std::move(_rsent_msg_ptr));
+// 		}
+// 	}
+// }
 
 void Engine::onMessage(
 	solid::frame::mpipc::ConnectionContext &_rctx,
@@ -256,7 +256,7 @@ void Engine::onMessage(
 			//TODO: set:
 			//_rrecv_msg_ptr->connection_id
 			
-			_rrecv_msg_ptr->sender_rgb_color = rcon_sender.rgb_color;
+			_rrecv_msg_ptr->event_stub.sender_rgb_color = rcon_sender.rgb_color;
 			
 			for(size_t i = 0; i < room.connections.size(); ++i){
 				ConnectionStub &rcon = room.connections[i];
@@ -268,28 +268,45 @@ void Engine::onMessage(
 		}else{
 			_rctx.service().closeConnection(_rctx.recipientId());
 		}
-	}else if(_rsent_msg_ptr){
+	}else if(_rsent_msg_ptr and _rsent_msg_ptr->is_init){
+		idbg(_rctx.recipientId()<<" error: "<<_rerror.message());
+		
+		ConnectionData 		&rcon_data = *_rctx.any().cast<ConnectionData>();
+			
+		RoomStub			&room = d.rooms[rcon_data.room_index];
+		ConnectionStub		&rcon = room.connections[rcon_data.room_entry_index];
+		
+		rcon.pending_count -= (1 + _rsent_msg_ptr->event_stubs.size());
+		
+		
+		if(rcon.crt_fetch_pos < room.connections.size()){
+			fetchLastEvents(_rctx, rcon_data, std::move(_rsent_msg_ptr));
+		}
 	}
 }
 
 void Engine::fetchLastEvents(
 	solid::frame::mpipc::ConnectionContext &_rctx, ConnectionData &_rcon_data,
-	std::shared_ptr<InitNotification> &&_init_msg_ptr
+	std::shared_ptr<EventsNotification> &&_msg_ptr
 ){
 	RoomStub			&room = d.rooms[_rcon_data.room_index];
 	ConnectionStub		&rcrtcon = room.connections[_rcon_data.room_entry_index];
 	
-	_init_msg_ptr->events.clear();
+	_msg_ptr->is_init = true;
+	_msg_ptr->event_stubs.clear();
 	
 	//continue fetch last events 
-	while(rcrtcon.crt_fetch_pos < room.connections.size() and _init_msg_ptr->events.size() < InitNotification::containerLimit()){
+	while(rcrtcon.crt_fetch_pos < room.connections.size() and _msg_ptr->event_stubs.size() < EventsNotification::containerLimit()){
 		
 		ConnectionStub &rcon = room.connections[rcon.crt_fetch_pos];
 		
 		if(rcon.crt_fetch_pos != _rcon_data.room_entry_index and rcon.hasLastEvent()){
 			
-			_init_msg_ptr->events.push_back(InitEventStub());
-			InitEventStub &back_event = _init_msg_ptr->events.back();
+			if(not _msg_ptr->event_stub.empty()){
+				_msg_ptr->event_stubs.push_back(EventStub{});
+			}
+			EventStub &back_event = _msg_ptr->event_stub.empty() ?  _msg_ptr->event_stub : _msg_ptr->event_stubs.back();
+			
 			back_event.event = rcon.last_event;
 			back_event.text = rcon.last_text;
 			back_event.sender_rgb_color = rcon.rgb_color;
@@ -299,14 +316,18 @@ void Engine::fetchLastEvents(
 	}
 	if(rcrtcon.crt_fetch_pos == room.connections.size()){
 		
-		if(_init_msg_ptr->events.size() < InitNotification::containerLimit()){
+		if(_msg_ptr->event_stubs.size() < EventsNotification::containerLimit()){
 			//add one last sentinel event
-			_init_msg_ptr->events.push_back(InitEventStub());
+			if(not _msg_ptr->event_stub.empty()){
+				_msg_ptr->event_stubs.push_back(EventStub{Event::Sentinel});
+			}else{
+				_msg_ptr->event_stub.event.type = Event::Sentinel;
+			}
 			rcrtcon.crt_fetch_pos = solid::InvalidIndex{};
 		}
 	}
-	if(_init_msg_ptr->events.size()){
-		_rctx.service().sendMessage(rcrtcon.id, _init_msg_ptr, 0|frame::mpipc::MessageFlags::Synchronous);
+	if(_msg_ptr->event_stubs.size() or not _msg_ptr->event_stub.empty()){
+		_rctx.service().sendMessage(rcrtcon.id, _msg_ptr, 0|frame::mpipc::MessageFlags::Synchronous);
 	}
 }
 
