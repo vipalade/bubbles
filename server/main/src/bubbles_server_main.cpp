@@ -122,10 +122,10 @@ int main(int argc, char *argv[]){
 		AioSchedulerT				scheduler;
 		
 		
+		bubbles::server::Engine		engine(bubbles::server::EngineConfiguration{});
 		frame::Manager				manager;
 		frame::mpipc::ServiceT		ipcservice(manager);
 		ErrorConditionT				err;
-		bubbles::server::Engine		engine(bubbles::server::EngineConfiguration{});
 		
 		err = scheduler.start(1);
 		

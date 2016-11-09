@@ -225,8 +225,9 @@ int main(int argc, char *argv[]){
 	
 	
 	frame::Manager						manager;
-	frame::mpipc::ServiceT				ipcservice{manager};
 	frame::ServiceT						service{manager};
+	
+	frame::mpipc::ServiceT				ipcservice{manager};
 	
 	frame::aio::Resolver				resolver;
 	
@@ -292,9 +293,13 @@ int main(int argc, char *argv[]){
 		return 1;
 	}
 	
-	widget.show();
+	widget.start();
 	
-	return app.exec();
+	int rv = app.exec();
+	
+	
+	
+	return rv;
 }
 
 //-----------------------------------------------------------------------------

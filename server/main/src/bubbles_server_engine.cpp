@@ -78,14 +78,28 @@ struct ConnectionStub{
 	}
 	
 	void saveLastEvent(const EventsNotification& _rmsg){
-		last_event = _rmsg.events.size() ? _rmsg.events.back() : _rmsg.main_event;
-		if(_rmsg.text.size()){
-			last_text = _rmsg.text;
+		
+		if(_rmsg.event_stubs.size()){
+			if(_rmsg.event_stubs.back().events.size()){
+				last_event = _rmsg.event_stubs.back().events.back();
+			}else{
+				last_event = _rmsg.event_stubs.back().event;
+			}
+			if(_rmsg.event_stubs.back().text.size()){
+				last_text = _rmsg.event_stubs.back().text;
+			}
+		}else{
+			if(_rmsg.event_stub.events.size()){
+				last_event = _rmsg.event_stub.events.back();
+			}else{
+				last_event = _rmsg.event_stub.event;
+			}
+			last_text = _rmsg.event_stub.text;
 		}
 	}
 	
 	bool hasLastEvent()const{
-		return last_event.type == Event::Unknown;
+		return last_event.type != Event::Unknown;
 	}
 	
 	ConnectionStub():pending_count(0), dropped_message_count(0), crt_fetch_pos(solid::InvalidIndex{}){}
@@ -127,7 +141,13 @@ struct StringPtrHash{
 	}
 };
 
-using NameMapT = unordered_map<const string*, size_t, StringPtrHash>;
+struct StringPtrEqual{
+	bool operator()(const string * _ps1, const string *_ps2)const{
+		return *_ps1 == *_ps2;
+	}
+};
+
+using NameMapT = unordered_map<const string*, size_t, StringPtrHash, StringPtrEqual>;
 
 struct Engine::Data{
 	Data(const EngineConfiguration &_config):config(_config), max_dropped_message_count(0){}
@@ -156,7 +176,7 @@ void Engine::onConnectionStart(solid::frame::mpipc::ConnectionContext &_rctx){
 }
 
 void Engine::onConnectionStop(solid::frame::mpipc::ConnectionContext &_rctx){
-	idbg(_rctx.recipientId());
+	idbg(_rctx.recipientId()<<' '<<_rctx.error().message());
 	
 	ConnectionData &rcon_data = *_rctx.any().cast<ConnectionData>();
 	unregisterConnection(_rctx, rcon_data);
@@ -184,6 +204,7 @@ void Engine::onMessage(
 				_rctx.recipientId(),
 				std::make_shared<RegisterResponse>(*_rrecv_msg_ptr, rgb_color), 0|frame::mpipc::MessageFlags::Synchronous
 			);
+			return;
 		}
 	}else{
 		error_id = ErrorAlreadyRegistered;
@@ -206,32 +227,10 @@ void Engine::onMessage(
 	SOLID_ASSERT(not _rrecv_msg_ptr);
 	SOLID_ASSERT(_rsent_msg_ptr);
 	if(_rrecv_msg_ptr){
+		idbg(_rctx.recipientId()<<"closing connection");
 		_rctx.service().closeConnection(_rctx.recipientId());
 	}
 }
-
-// void Engine::onMessage(
-// 	solid::frame::mpipc::ConnectionContext &_rctx,
-// 	std::shared_ptr<InitNotification> &_rsent_msg_ptr,
-// 	std::shared_ptr<InitNotification> &_rrecv_msg_ptr,
-// 	solid::ErrorConditionT const &_rerror
-// ){
-// 	if(_rsent_msg_ptr){
-// 		idbg(_rctx.recipientId()<<" error: "<<_rerror.message());
-// 		
-// 		ConnectionData 		&rcon_data = *_rctx.any().cast<ConnectionData>();
-// 			
-// 		RoomStub			&room = d.rooms[rcon_data.room_index];
-// 		ConnectionStub		&rcon = room.connections[rcon_data.room_entry_index];
-// 		
-// 		rcon.pending_count -= (1 + _rsent_msg_ptr->events.size());
-// 		
-// 		
-// 		if(rcon.crt_fetch_pos < room.connections.size()){
-// 			fetchLastEvents(_rctx, rcon_data, std::move(_rsent_msg_ptr));
-// 		}
-// 	}
-// }
 
 void Engine::onMessage(
 	solid::frame::mpipc::ConnectionContext &_rctx,
@@ -261,7 +260,7 @@ void Engine::onMessage(
 			for(size_t i = 0; i < room.connections.size(); ++i){
 				ConnectionStub &rcon = room.connections[i];
 				if(i != rcon_data.room_entry_index and rcon.canAcceptEventsNotification(d.config, *_rrecv_msg_ptr, rcon_data.room_entry_index)){
-					rcon.pending_count += (1 + _rrecv_msg_ptr->events.size());
+					rcon.pending_count += (1 + _rrecv_msg_ptr->event_stub.events.size());
 					_rctx.service().sendMessage(rcon.id, _rrecv_msg_ptr, 0|frame::mpipc::MessageFlags::Synchronous);
 				}
 			}
@@ -298,9 +297,9 @@ void Engine::fetchLastEvents(
 	//continue fetch last events 
 	while(rcrtcon.crt_fetch_pos < room.connections.size() and _msg_ptr->event_stubs.size() < EventsNotification::containerLimit()){
 		
-		ConnectionStub &rcon = room.connections[rcon.crt_fetch_pos];
+		ConnectionStub &rcon = room.connections[rcrtcon.crt_fetch_pos];
 		
-		if(rcon.crt_fetch_pos != _rcon_data.room_entry_index and rcon.hasLastEvent()){
+		if(rcrtcon.crt_fetch_pos != _rcon_data.room_entry_index and rcon.hasLastEvent()){
 			
 			if(not _msg_ptr->event_stub.empty()){
 				_msg_ptr->event_stubs.push_back(EventStub{});
@@ -312,19 +311,20 @@ void Engine::fetchLastEvents(
 			back_event.sender_rgb_color = rcon.rgb_color;
 			//back_event.connection_id = rcon.id;//TODO:
 		}
-		++rcon.crt_fetch_pos;
+		++rcrtcon.crt_fetch_pos;
 	}
 	if(rcrtcon.crt_fetch_pos == room.connections.size()){
 		
-		if(_msg_ptr->event_stubs.size() < EventsNotification::containerLimit()){
-			//add one last sentinel event
-			if(not _msg_ptr->event_stub.empty()){
-				_msg_ptr->event_stubs.push_back(EventStub{Event::Sentinel});
-			}else{
-				_msg_ptr->event_stub.event.type = Event::Sentinel;
-			}
-			rcrtcon.crt_fetch_pos = solid::InvalidIndex{};
-		}
+// 		if(_msg_ptr->event_stubs.size() < EventsNotification::containerLimit()){
+// 			//add one last sentinel event
+// 			if(not _msg_ptr->event_stub.empty()){
+// 				_msg_ptr->event_stubs.push_back(EventStub{Event::Sentinel});
+// 			}else{
+// 				_msg_ptr->event_stub.event.type = Event::Sentinel;
+// 			}
+// 			rcrtcon.crt_fetch_pos = solid::InvalidIndex{};
+// 		}
+		rcrtcon.crt_fetch_pos = solid::InvalidIndex{};
 	}
 	if(_msg_ptr->event_stubs.size() or not _msg_ptr->event_stub.empty()){
 		_rctx.service().sendMessage(rcrtcon.id, _msg_ptr, 0|frame::mpipc::MessageFlags::Synchronous);
@@ -421,7 +421,9 @@ uint32_t Engine::registerConnection(
 	rcon.rgb_color = rgb_color;
 	_rrgb_color = rgb_color;
 	
-	fetchLastEvents(_rctx, _rcon_data, std::make_shared<InitNotification>());
+	idbg("Registered connection on room "<<room.name<<" with id "<<_rcon_data.room_entry_index);
+	
+	fetchLastEvents(_rctx, _rcon_data, std::make_shared<EventsNotification>());
 	
 	return 0;
 }
@@ -440,7 +442,7 @@ void Engine::unregisterConnection(solid::frame::mpipc::ConnectionContext &_rctx,
 		ConnectionStub		&rcon_sender = room.connections[_rcon_data.room_entry_index];
 				
 		auto close_msg_ptr = std::make_shared<EventsNotification>();
-		close_msg_ptr->sender_rgb_color = rcon_sender.rgb_color;
+		close_msg_ptr->event_stub.sender_rgb_color = rcon_sender.rgb_color;
 		//TODO: set:
 		//_rrecv_msg_ptr->connection_id
 		

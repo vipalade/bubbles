@@ -106,40 +106,6 @@ struct Event{
 	uint32_t	diff_time_msec;
 };
 
-// struct InitEventStub{
-// 	
-// 	Event 			event;
-// 	ConnectionId	connection_id;
-// 	uint32_t		sender_rgb_color;
-// 	std::string		text;
-// 	
-// 	template <class S>
-// 	void serialize(S &_s, solid::frame::mpipc::ConnectionContext &_rctx){
-// 		_s.push(text, "text").push(event, "event").push(sender_rgb_color, "sender_rgb_color").push(connection_id, "connection_id");
-// 	}
-// };
-// 
-// struct InitNotification: solid::frame::mpipc::Message{
-// 	using EventDequeT = std::deque<InitEventStub>;
-// 	
-// 	static size_t containerLimit(){
-// 		return 1024;
-// 	}
-// 	
-// 	EventDequeT		events;
-// 	
-// 	template <class S>
-// 	void serialize(S &_s, solid::frame::mpipc::ConnectionContext &_rctx){
-// 		_s.pushContainerLimit();//back to default
-// 		_s.pushStringLimit();//back to default
-// 		
-// 		_s.pushContainer(events, "events");
-// 		
-// 		_s.pushContainerLimit(containerLimit());
-// 		_s.pushStringLimit(1024);
-// 	}
-// };
-
 struct EventStub{
 	using EventVectorT = std::vector<Event>;
 	
@@ -229,7 +195,7 @@ struct EventsNotificationResponse: solid::frame::mpipc::Message{
 };
 
 using ProtoSpecT = solid::frame::mpipc::serialization_v1::ProtoSpec<
-	0, RegisterRequest, RegisterResponse, /*InitNotification,*/ EventsNotification,
+	0, RegisterRequest, RegisterResponse, EventsNotification,
 	EventsNotificationRequest, EventsNotificationResponse
 >;
 

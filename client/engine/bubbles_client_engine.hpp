@@ -26,6 +26,35 @@ struct EngineConfiguration{
 	size_t		max_event_queue_size;
 };
 
+class Engine;
+
+struct PlotIterator{
+	PlotIterator(PlotIterator &&_plotit);
+	~PlotIterator();
+	PlotIterator& operator=(PlotIterator &&_plotit) = delete;
+	
+	uint32_t rgbColor()const;
+	int32_t x()const;
+	int32_t y()const;
+	
+	const std::string& text()const;
+	
+	bool end()const;
+	PlotIterator& operator++();
+	
+	uint32_t myRgbColor()const{
+		return rgb_color;
+	}
+private:
+	friend class Engine;
+	PlotIterator(Engine &);
+private:
+	size_t		pos;
+	size_t		plotdq_index;
+	uint32_t	rgb_color;
+	Engine		&reng;
+};
+
 class Engine: public solid::Dynamic<Engine, solid::frame::Object>{
 	using ExitFunctionT = std::function<void()>;
 	using GuiUpdateFunctionT = std::function<void()>;
@@ -57,6 +86,8 @@ public:
 		GuiUpdateFunctionT f{_f};
 		doSetGuiUpdateFunction(std::move(f));
 	}
+	
+	PlotIterator plot();
 	
 	void moveEvent(int _x, int _y);
 	void onConnectionStart(solid::frame::mpipc::ConnectionContext &_rctx);
@@ -94,7 +125,9 @@ private:
 	
 	void doSetExitFunction(ExitFunctionT &&_uf);
 	void doSetGuiUpdateFunction(GuiUpdateFunctionT &&_uf);
+	void doProcessIncomingNotifications(solid::frame::ReactorContext &_rctx);
 private:
+	friend struct PlotIterator;
 	struct Data;
 	Data	&d;
 };

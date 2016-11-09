@@ -1,6 +1,6 @@
 # the bubble service
 
-add_executable (bubbles_server src/bubbles_server.cpp src/bubbles_server_engine.cpp ../../protocol/bubbles_messages.hpp)
+add_executable (bubbles_server src/bubbles_server_main.cpp src/bubbles_server_engine.cpp ../../protocol/bubbles_messages.hpp)
 
 target_link_libraries (bubbles_server
 	solid_frame_mpipc
