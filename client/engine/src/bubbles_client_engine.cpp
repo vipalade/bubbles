@@ -325,6 +325,7 @@ void Engine::doTrySendEvents(std::shared_ptr<EventsNotification> &&_rrecv_msg_pt
 		}
 		
 		std::shared_ptr<EventsNotification> tmp_ptr{std::move(d.events_message_ptr)};
+		SOLID_ASSERT(tmp_ptr);
 		d.rmpipc.sendMessage(d.server_endpoint.c_str(), tmp_ptr);
 	}
 }
@@ -342,7 +343,7 @@ void Engine::onConnectionStop(solid::frame::mpipc::ConnectionContext &_rctx){
 		d.events_message_ptr->event_stub.event = d.last_event;
 		
 		std::shared_ptr<EventsNotification> tmp_ptr{std::move(d.events_message_ptr)};
-		
+		SOLID_ASSERT(tmp_ptr);
 		d.rmpipc.sendMessage(d.server_endpoint.c_str(), tmp_ptr);
 	}
 }

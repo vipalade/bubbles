@@ -258,7 +258,9 @@ void Engine::onMessage(
 			_rrecv_msg_ptr->event_stub.sender_rgb_color = rcon_sender.rgb_color;
 			
 			for(size_t i = 0; i < room.connections.size(); ++i){
+				
 				ConnectionStub &rcon = room.connections[i];
+				
 				if(i != rcon_data.room_entry_index and rcon.canAcceptEventsNotification(d.config, *_rrecv_msg_ptr, rcon_data.room_entry_index)){
 					rcon.pending_count += (1 + _rrecv_msg_ptr->event_stub.events.size());
 					_rctx.service().sendMessage(rcon.id, _rrecv_msg_ptr, 0|frame::mpipc::MessageFlags::Synchronous);
