@@ -33,12 +33,12 @@ void Widget::setAntialiased(bool antialiased)
 
 QSize Widget::minimumSizeHint() const
 {
-    return QSize(1280, 720);
+    return QSize(1280/2, 720/2);
 }
 
 QSize Widget::sizeHint() const
 {
-    return QSize(1280, 720);
+    return QSize(1280/2, 720/2);
 }
 
 void split_color(uint32_t _c, uint32_t &_r, uint32_t &_g, uint32_t &_b){

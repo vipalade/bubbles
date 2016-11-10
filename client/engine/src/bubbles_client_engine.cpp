@@ -2,6 +2,7 @@
 #include "solid/frame/mpipc/mpipcservice.hpp"
 #include "solid/frame/mpipc/mpipcconfiguration.hpp"
 
+#include "solid/frame/timer.hpp"
 #include "solid/frame/reactorcontext.hpp"
 #include "solid/system/debug.hpp"
 #include "solid/system/cassert.hpp"
@@ -10,6 +11,11 @@
 
 #include <queue>
 #include <deque>
+#include <mutex>
+#include <condition_variable>
+
+
+
 using namespace solid;
 using namespace std;
 
@@ -36,10 +42,11 @@ struct Engine::Data{
 	Data(
 		solid::frame::ServiceT &_rsvc,
 		solid::frame::mpipc::Service &_rmpipc,
-		const EngineConfiguration &_cfg
+		const EngineConfiguration &_cfg,
+		const frame::ObjectProxy &_proxy
 	):	rmpipc(_rmpipc), service(_rsvc), cfg(_cfg), push_eventq_idx(0), pop_eventq_idx(1),
 		push_messagedq_idx(0), pop_messagedq_idx(1), read_plotdq_idx(0), write_plotdq_idx(1), read_plotdq_count(0),
-		discarded_on_push(false), rgb_color(0){}
+		discarded_on_push(false), rgb_color(0), timer(_proxy){}
 	
 	void discardPopEventQ(){
 		EventQueueT &eq = eventq[pop_eventq_idx];
@@ -73,6 +80,9 @@ struct Engine::Data{
 	EventsNotificationDequeT				messagedq[2];
 	PlotStubDequeT							plotdq[2];
 	EventStubDequeT							event_stubdq;
+	mutex									mtx;
+	condition_variable						cnd;
+	frame::Timer							timer;
 };
 
 
@@ -86,8 +96,11 @@ PlotIterator::PlotIterator(PlotIterator &&_plotit):reng(_plotit.reng){
 
 PlotIterator::~PlotIterator(){
 	if(plotdq_index != solid::InvalidIndex()){
-		std::unique_lock<std::mutex>	lock(reng.d.service.mutex(reng));
+		std::unique_lock<std::mutex>	lock(reng.d.mtx);
 		--reng.d.read_plotdq_count;
+		if(reng.d.read_plotdq_count == 0){
+			reng.d.cnd.notify_one();
+		}
 	}
 }
 
@@ -117,7 +130,7 @@ PlotIterator& PlotIterator::operator++(){
 
 PlotIterator::PlotIterator(Engine &_reng):reng(_reng){
 	pos = 0;
-	std::unique_lock<std::mutex>	lock(reng.d.service.mutex(reng));
+	std::unique_lock<std::mutex>	lock(reng.d.mtx);
 	plotdq_index = reng.d.read_plotdq_idx;
 	++reng.d.read_plotdq_count;
 	rgb_color = reng.d.rgb_color;
@@ -127,7 +140,7 @@ PlotIterator::PlotIterator(Engine &_reng):reng(_reng){
 Engine::Engine(
 	solid::frame::ServiceT &_rsvc, solid::frame::mpipc::Service &_rmpipc,
 	const EngineConfiguration &_cfg
-):d(*(new Data(_rsvc, _rmpipc, _cfg))){}
+):d(*(new Data(_rsvc, _rmpipc, _cfg, proxy()))){}
 
 Engine::~Engine(){
 	delete &d;
@@ -162,7 +175,7 @@ void Engine::moveEvent(int _x, int _y){
 	idbg(_x<<':'<<_y);
 	bool notify_engine = false;
 	{
-		std::unique_lock<std::mutex>	lock(d.service.mutex(*this));
+		std::unique_lock<std::mutex>	lock(d.mtx);
 		EventQueueT 					&reventq = d.eventq[d.push_eventq_idx];
 		
 		if((reventq.size() + 1) == d.cfg.max_event_queue_size){
@@ -196,8 +209,9 @@ void Engine::onEvent(frame::ReactorContext &_rctx, solid::Event &&_uevent) /*ove
 }
 
 void Engine::doProcessIncomingNotifications(solid::frame::ReactorContext &_rctx){
+	idbg("");
 	{
-		std::unique_lock<std::mutex> lock(d.service.mutex(*this));
+		std::unique_lock<std::mutex> lock(d.mtx);
 		swap(d.pop_messagedq_idx, d.push_messagedq_idx);
 	}
 	
@@ -205,8 +219,10 @@ void Engine::doProcessIncomingNotifications(solid::frame::ReactorContext &_rctx)
 	
 	//put all the event stubs in a queue
 	for(auto& msg_ptr:rmessagedq){
+		idbg(" event_stub with color ("<<msg_ptr->event_stub.sender_rgb_color<<") main event "<<msg_ptr->event_stub.event.x<<":"<<msg_ptr->event_stub.event.y<<" and other "<<msg_ptr->event_stub.events.size()<<" events");
 		d.event_stubdq.push_back(std::move(msg_ptr->event_stub));
 		for(auto &e_s: msg_ptr->event_stubs){
+			idbg(" event_stub with color ("<<e_s.sender_rgb_color<<") main event "<<e_s.event.x<<":"<<e_s.event.y<<" and other "<<e_s.events.size()<<" events");
 			d.event_stubdq.push_back(std::move(e_s));
 		}
 	}
@@ -250,6 +266,7 @@ void Engine::doProcessIncomingNotifications(solid::frame::ReactorContext &_rctx)
 						rps.y = revt.y;
 						++rps.pending_pos;
 						if(rps.pending_pos >= (revent_stub.events.size() + 1)){
+							rps.pending_pos = 0;
 							drop_event_stub = true;
 						}
 					}
@@ -266,6 +283,7 @@ void Engine::doProcessIncomingNotifications(solid::frame::ReactorContext &_rctx)
 				rps.pending_pos = 1;
 				rps.ploted = false;
 				if(rps.pending_pos >= (revent_stub.events.size() + 1)){
+					rps.pending_pos = 0;
 					drop_event_stub = true;
 				}
 			}else{
@@ -276,7 +294,30 @@ void Engine::doProcessIncomingNotifications(solid::frame::ReactorContext &_rctx)
 		if(not drop_event_stub){
 			d.event_stubdq.push_back(std::move(revent_stub));
 		}
+		
 		d.event_stubdq.pop_front();
+	}
+	
+	//now we need to make visible the d.plotdq we've just modified 
+	{
+		std::unique_lock<std::mutex> lock(d.mtx);
+		while(d.read_plotdq_count){
+			d.cnd.wait(lock);
+		}
+		swap(d.write_plotdq_idx, d.read_plotdq_idx);
+	}
+	
+	d.plotdq[d.write_plotdq_idx] = d.plotdq[d.read_plotdq_idx];
+	
+	for(auto& plot_stub: d.plotdq[d.write_plotdq_idx]){
+		plot_stub.ploted = true;
+	}
+	
+	//update gui
+	d.gui_update_function();
+	
+	if(d.event_stubdq.size()){
+		d.timer.waitUntil(_rctx, _rctx.time() + 20, [this](solid::frame::ReactorContext &_rctx){doProcessIncomingNotifications(_rctx);});
 	}
 }
 
@@ -284,7 +325,7 @@ void Engine::doTrySendEvents(std::shared_ptr<EventsNotification> &&_rrecv_msg_pt
 	idbg("");
 	size_t		pop_eventq_idx = 0;
 	{
-		std::unique_lock<std::mutex> lock(d.service.mutex(*this));
+		std::unique_lock<std::mutex> lock(d.mtx);
 		if(_rrecv_msg_ptr){
 			d.events_message_ptr = std::move(_rrecv_msg_ptr);
 		}
@@ -325,7 +366,6 @@ void Engine::doTrySendEvents(std::shared_ptr<EventsNotification> &&_rrecv_msg_pt
 		}
 		
 		std::shared_ptr<EventsNotification> tmp_ptr{std::move(d.events_message_ptr)};
-		SOLID_ASSERT(tmp_ptr);
 		d.rmpipc.sendMessage(d.server_endpoint.c_str(), tmp_ptr);
 	}
 }
@@ -333,7 +373,7 @@ void Engine::doTrySendEvents(std::shared_ptr<EventsNotification> &&_rrecv_msg_pt
 void Engine::onConnectionStart(solid::frame::mpipc::ConnectionContext &_rctx){
 	idbg(_rctx.recipientId());
 	auto msg_ptr = std::make_shared<RegisterRequest>(d.room_name, d.rgb_color);
-	_rctx.service().sendMessage(_rctx.recipientId(), msg_ptr, 0|frame::mpipc::MessageFlags::WaitResponse);
+	SOLID_CHECK_ERROR(_rctx.service().sendMessage(_rctx.recipientId(), msg_ptr, 0|frame::mpipc::MessageFlags::WaitResponse));
 }
 
 void Engine::onConnectionStop(solid::frame::mpipc::ConnectionContext &_rctx){
@@ -343,7 +383,6 @@ void Engine::onConnectionStop(solid::frame::mpipc::ConnectionContext &_rctx){
 		d.events_message_ptr->event_stub.event = d.last_event;
 		
 		std::shared_ptr<EventsNotification> tmp_ptr{std::move(d.events_message_ptr)};
-		SOLID_ASSERT(tmp_ptr);
 		d.rmpipc.sendMessage(d.server_endpoint.c_str(), tmp_ptr);
 	}
 }
@@ -367,7 +406,7 @@ void Engine::onMessage(
 	if(_rrecv_msg_ptr and _rrecv_msg_ptr->success()){
 		d.rgb_color = _rrecv_msg_ptr->rgb_color;
 		
-		idbg(_rctx.recipientId()<<"MY COLOR: "<<d.rgb_color);
+		idbg(_rctx.recipientId()<<" MY COLOR: "<<d.rgb_color);
 		
 		//after activation, the mpipc will start sending pending EventsNotification messages
 		_rctx.service().connectionNotifyEnterActiveState(_rctx.recipientId());
@@ -388,7 +427,7 @@ void Engine::onMessage(
 	if(_rrecv_msg_ptr){
 		bool notify = false;
 		{
-			std::unique_lock<std::mutex>	lock(d.service.mutex(*this));
+			std::unique_lock<std::mutex>	lock(d.mtx);
 			EventsNotificationDequeT		&rmessagedq = d.messagedq[d.push_messagedq_idx];
 			
 			rmessagedq.push_back(std::move(_rrecv_msg_ptr));
