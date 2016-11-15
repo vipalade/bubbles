@@ -408,7 +408,7 @@ uint32_t Engine::registerConnection(
 		
 		auto it = room.used_colors.find(_rreq.rgb_color);
 		
-		if(it != room.used_colors.end()){
+		if(it == room.used_colors.end()){
 			rgb_color = _rreq.rgb_color;
 		}
 	}
