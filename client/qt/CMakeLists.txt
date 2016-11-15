@@ -1,4 +1,5 @@
-INCLUDE("../../cmake/find_qt.cmake")
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
+set(CMAKE_AUTOMOC ON)
 
 # qt5_wrap_ui(
 # 	uic_basic_gui
@@ -10,45 +11,37 @@ INCLUDE("../../cmake/find_qt.cmake")
 # 	icons.qrc
 # )
 
-set(
-	src_basic_gui
-	src/bubbles_client_main.cpp
-	src/bubbles_client_widget.hpp
-	src/bubbles_client_widget.cpp
-)
 
-add_executable(
-	bubbles_client
-	${uic_basic_gui}
-#	${res}
-	${src_basic_gui}
-)
+list(APPEND CMAKE_PREFIX_PATH "${EXTERN_PATH}")
+find_package(Qt5Widgets)
 
-qt5_use_modules (bubbles_client Core Widgets DBus)
+if(${Qt5Widgets_FOUND})
+	set(
+		src_basic_gui
+		src/bubbles_client_main.cpp
+		src/bubbles_client_widget.hpp
+		src/bubbles_client_widget.cpp
+	)
 
-set_target_properties(
-	bubbles_client
-	PROPERTIES
-	AUTOMOC TRUE
-)
+	add_executable(
+		bubbles_client
+		${uic_basic_gui}
+	#	${res}
+		${src_basic_gui}
+	)
 
-target_include_directories(
-	bubbles_client
-	PRIVATE
-	${CMAKE_CURRENT_BINARY_DIR}
-)
-
-target_link_libraries(
-	bubbles_client
-	bubbles_client_engine
-	solid_frame_mpipc
-	solid_frame_aio
-	solid_frame
-	solid_serialization
-	solid_utility
-	solid_system
-	boost_program_options
-	boost_system
-	${QT_LIBRARIES}
-	${SYS_BASIC_LIBS}
-)
+	target_link_libraries(
+		bubbles_client
+		bubbles_client_engine
+		solid_frame_mpipc
+		solid_frame_aio
+		solid_frame
+		solid_serialization
+		solid_utility
+		solid_system
+		boost_program_options
+		boost_system
+		Qt5::Widgets
+		${SYS_BASIC_LIBS}
+	)
+endif()
