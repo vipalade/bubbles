@@ -13,6 +13,7 @@
 #include <deque>
 #include <mutex>
 #include <condition_variable>
+#include <random>
 
 
 
@@ -38,6 +39,10 @@ struct PlotStub{
 using PlotStubDequeT = deque<PlotStub>;
 using EventStubDequeT = deque<EventStub>;
 
+using AutoPairT = std::pair<int, int>;
+using AutoAtomicPairT = std::pair<atomic<int>, atomic<int>>;
+using AutoQueueT = std::queue<AutoPairT>;
+
 struct Engine::Data{
 	Data(
 		solid::frame::ServiceT &_rsvc,
@@ -46,7 +51,13 @@ struct Engine::Data{
 		const frame::ObjectProxy &_proxy
 	):	rmpipc(_rmpipc), service(_rsvc), cfg(_cfg), push_eventq_idx(0), pop_eventq_idx(1),
 		push_messagedq_idx(0), pop_messagedq_idx(1), read_plotdq_idx(0), write_plotdq_idx(1), read_plotdq_count(0),
-		discarded_on_push(false), rgb_color(0), timer(_proxy){}
+		discarded_on_push(false), rgb_color(0), auto_pilot(false), timer(_proxy), auto_timer(_proxy),
+		auto_crt_w(1280/2), auto_crt_h(720/2), auto_mod_w(0), auto_mod_h(0), auto_frame_changed(false), auto_plot_done(true),
+		auto_plot_idx(0), auto_fill_idx(1),
+		auto_dist_x(-(auto_crt_w/2), auto_crt_w/2), auto_dist_y(-(auto_crt_h/2), auto_crt_h/2),
+		auto_dist_steps(1, 100)
+	{
+	}
 	
 	void discardPopEventQ(){
 		EventQueueT &eq = eventq[pop_eventq_idx];
@@ -73,16 +84,35 @@ struct Engine::Data{
 	
 	bool 									discarded_on_push;
 	uint32_t								rgb_color;
+	bool									auto_pilot;
 	Event									last_event;
 	std::shared_ptr<EventsNotification>		events_message_ptr;
 	ExitFunctionT							exit_function;
 	GuiUpdateFunctionT						gui_update_function;
+	AutoUpdateFunctionT						auto_update_function;
 	EventsNotificationDequeT				messagedq[2];
 	PlotStubDequeT							plotdq[2];
 	EventStubDequeT							event_stubdq;
 	mutex									mtx;
 	condition_variable						cnd;
 	frame::Timer							timer;
+	frame::Timer							auto_timer;
+	
+	int										auto_crt_w;
+	int										auto_crt_h;
+	int										auto_mod_w;
+	int										auto_mod_h;
+	
+	std::atomic<bool>						auto_frame_changed;
+	std::atomic<bool>						auto_plot_done;
+	std::atomic<uint16_t>					auto_plot_idx;
+	uint16_t								auto_fill_idx;
+	AutoAtomicPairT							auto_plot[2];
+	random_device							auto_rd;
+	std::uniform_int_distribution<int>		auto_dist_x;
+	std::uniform_int_distribution<int>		auto_dist_y;
+	std::uniform_int_distribution<int>		auto_dist_steps;
+	AutoQueueT								auto_q;
 };
 
 
@@ -150,6 +180,7 @@ solid::ErrorConditionT Engine::start(
 	SchedulerT &_rsched,
 	const std::string &_server_endpoint,
 	const std::string &_room_name,
+	const bool _auto_pilot,
 	uint32_t _rgb_color
 ){
 	idbg("");
@@ -157,17 +188,22 @@ solid::ErrorConditionT Engine::start(
 	
 	if(not this->isRunning()){
 		solid::DynamicPointer<frame::Object>	objptr(this);//its save - pointer count is kept by this pointer
+		d.server_endpoint = _server_endpoint;
+		d.room_name = _room_name;
+		d.auto_pilot = _auto_pilot;
+		d.rgb_color = _rgb_color;
+		
 		_rsched.startObject(objptr, d.service, solid::generic_event_category.event(solid::GenericEvents::Start), err);
-		if(not err){
-			d.server_endpoint = _server_endpoint;
-			d.room_name = _room_name;
-		}
 	}
 	return err;
 }
 
 PlotIterator Engine::plot(){
 	return PlotIterator(*this);
+}
+
+bool Engine::autoPilot()const{
+	return d.auto_pilot;
 }
 
 void Engine::moveEvent(int _x, int _y){
@@ -198,13 +234,98 @@ void Engine::onEvent(frame::ReactorContext &_rctx, solid::Event &&_uevent) /*ove
 	if(generic_event_category.event(GenericEvents::Start) == _uevent){
 		
 		d.events_message_ptr = std::make_shared<EventsNotification>();
-		
+		if(d.auto_pilot){
+			onAutoPilot(_rctx);
+		}
 	}else if(generic_event_category.event(GenericEvents::Kill) == _uevent){
 		postStop(_rctx);
 	}else if(generic_event_category.event(GenericEvents::Raise) == _uevent){
 		doTrySendEvents();
 	}else if(generic_event_category.event(GenericEvents::Message) == _uevent){
 		doProcessIncomingNotifications(_rctx);
+	}
+}
+
+void Engine::getAutoPosition(int &_rx, int &_ry){
+	const size_t idx = d.auto_plot_idx;
+	_rx = d.auto_plot[idx].first;
+	_ry = d.auto_plot[idx].second;
+	d.auto_plot_done = true;
+}
+
+void Engine::onAutoPilot(solid::frame::ReactorContext &_rctx){
+	const bool frame_changed = d.auto_frame_changed.exchange(false);
+	
+	if(frame_changed){
+		std::unique_lock<std::mutex> lock(d.mtx);
+		d.auto_crt_w = d.auto_mod_w;
+		d.auto_crt_h = d.auto_mod_h;
+	}
+	if(frame_changed){
+		d.auto_dist_x = std::uniform_int_distribution<>(-(d.auto_crt_w/2), d.auto_crt_w/2);
+		d.auto_dist_y = std::uniform_int_distribution<>(-(d.auto_crt_h/2), d.auto_crt_h/2);
+	}
+	
+	if(d.auto_q.size()){
+		if(d.auto_plot_done){
+			d.auto_plot[d.auto_fill_idx] = d.auto_q.front();
+			d.auto_q.pop();
+			d.auto_fill_idx = d.auto_plot_idx.exchange(d.auto_fill_idx);
+			d.auto_plot_done = false;
+			d.auto_timer.waitUntil(_rctx, _rctx.time() + 100, [this](solid::frame::ReactorContext &_rctx){onAutoPilot(_rctx);});
+			d.auto_update_function();
+		}else{
+			this->post(_rctx, [this](solid::frame::ReactorContext &_rctx, solid::Event&&){onAutoPilot(_rctx);});
+		}
+	}else{
+		//refill auto_q
+		std::mt19937 gen(d.auto_rd());
+		float new_x = d.auto_dist_x(gen);
+		float new_y = d.auto_dist_y(gen);
+		int   new_s = d.auto_dist_steps(gen);
+		
+		float old_x = d.auto_plot[d.auto_plot_idx].first;
+		float old_y = d.auto_plot[d.auto_plot_idx].second;
+		
+		float dis_x = abs(new_x - old_x);
+		float dis_y = abs(new_y - old_y);
+		
+		float slope = (new_y - old_y)/(new_x - old_x);
+		
+		//idbg(old_x<<':'<<old_y<<" -> "<<new_x<<':'<<new_y<<" in "<<new_s<<" steps");
+		
+		if(dis_x < dis_y){
+			//go by y axis
+			float step = (new_y - old_y) / new_s;
+			float crt_y = old_y + step;
+			for(int i = 0; i < new_s; ++i, crt_y += step){
+				float crt_x = ((crt_y - old_y) + old_x * slope)/slope;
+				int icrt_x = crt_x;
+				int icrt_y = crt_y;
+				//idbg(crt_x<<':'<<crt_y<<" "<<icrt_x<<':'<<icrt_y);
+				if(d.auto_q.empty() or (d.auto_q.back().first != icrt_x or d.auto_q.back().second != icrt_y)){
+					
+					d.auto_q.push(AutoPairT(icrt_x, icrt_y));
+				}
+			}
+		}else{
+			//go by x axis
+			float step = (new_x - old_x) / new_s;
+			float crt_x = old_x + step;
+			for(int i = 0; i < new_s; ++i, crt_x += step){
+				float crt_y = (slope*(crt_x - old_x)) + old_y;
+				int icrt_x = crt_x;
+				int icrt_y = crt_y;
+				
+				//idbg(crt_x<<':'<<crt_y<<" "<<icrt_x<<':'<<icrt_y);
+				
+				if(d.auto_q.empty() or (d.auto_q.back().first != icrt_x or d.auto_q.back().second != icrt_y)){
+					d.auto_q.push(AutoPairT(icrt_x, icrt_y));
+				}
+			}
+		}
+		
+		this->post(_rctx, [this](solid::frame::ReactorContext &_rctx, solid::Event&&){onAutoPilot(_rctx);});
 	}
 }
 
@@ -392,6 +513,16 @@ void Engine::doSetExitFunction(ExitFunctionT &&_uf){
 }
 void Engine::doSetGuiUpdateFunction(GuiUpdateFunctionT &&_uf){
 	d.gui_update_function = std::move(_uf);
+}
+void Engine::doSetAutoUpdateFunction(AutoUpdateFunctionT &&_uf){
+	d.auto_update_function = _uf;
+}
+
+void Engine::setFrame(size_t _w, size_t _h){
+	std::unique_lock<std::mutex>	lock(d.mtx);
+	d.auto_mod_w = _w;
+	d.auto_mod_h = _h;
+	d.auto_frame_changed = true;
 }
 
 void Engine::onMessage(

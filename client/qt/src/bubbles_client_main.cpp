@@ -304,7 +304,7 @@ int main(int argc, char *argv[]){
 		}
 	}
 	
-	err = engine_ptr->start(scheduler, p.connect_endpoint, p.room_name);
+	err = engine_ptr->start(scheduler, p.connect_endpoint, p.room_name, p.auto_pilot);
 	
 	if(err){
 		cout<<"Error starting engine: "<<err.message()<<endl;
@@ -338,6 +338,7 @@ bool parseArguments(Parameters &_par, int argc, char *argv[]){
 			("connect,c", value<std::string>(&_par.connect_endpoint)->default_value("localhost:2000"), "Server endpoint: address:port")
 			("room,r", value<std::string>(&_par.room_name)->default_value("test"), "Connect room")
 			("secure,s", value<bool>(&_par.secure)->implicit_value(true)->default_value(false), "Use SSL to secure communication")
+			("auto,a", value<bool>(&_par.auto_pilot)->implicit_value(true)->default_value(false), "Auto randomly move the bubble")
 		;
 		variables_map vm;
 		store(parse_command_line(argc, argv, desc), vm);

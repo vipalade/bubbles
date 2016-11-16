@@ -58,6 +58,7 @@ private:
 class Engine: public solid::Dynamic<Engine, solid::frame::Object>{
 	using ExitFunctionT = std::function<void()>;
 	using GuiUpdateFunctionT = std::function<void()>;
+	using AutoUpdateFunctionT = std::function<void()>;
 public:
 	using PointerT = solid::DynamicPointer<Engine>;
 	
@@ -72,8 +73,12 @@ public:
 		SchedulerT &_rsched,
 		const std::string &_server_endpoint,
 		const std::string &_room_name,
+		const bool _auto_pilot = false,
 		uint32_t _rgb_color = 0
 	);
+	
+	
+	bool autoPilot()const;
 	
 	template <class F>
 	void setExitFunction(F _f){
@@ -87,7 +92,17 @@ public:
 		doSetGuiUpdateFunction(std::move(f));
 	}
 	
+	template <class F>
+	void setAutoUpdateFunction(F _f){
+		AutoUpdateFunctionT f{_f};
+		doSetAutoUpdateFunction(std::move(f));
+	}
+	
+	void setFrame(size_t _w, size_t _h);
+	
 	PlotIterator plot();
+	
+	void getAutoPosition(int &_rx, int &_ry);
 	
 	void moveEvent(int _x, int _y);
 	void onConnectionStart(solid::frame::mpipc::ConnectionContext &_rctx);
@@ -125,7 +140,9 @@ private:
 	
 	void doSetExitFunction(ExitFunctionT &&_uf);
 	void doSetGuiUpdateFunction(GuiUpdateFunctionT &&_uf);
+	void doSetAutoUpdateFunction(AutoUpdateFunctionT &&_uf);
 	void doProcessIncomingNotifications(solid::frame::ReactorContext &_rctx);
+	void onAutoPilot(solid::frame::ReactorContext &_rctx);
 private:
 	friend struct PlotIterator;
 	struct Data;

@@ -3,6 +3,7 @@
 
 #include <QPainter>
 #include <QMouseEvent>
+#include <QTextStream>
 
 #include <stdlib.h>
 
@@ -16,9 +17,11 @@ Widget::Widget(Engine::PointerT &_engine_ptr, QWidget *parent)
     
 	connect(this, SIGNAL(updateSignal()), this, SLOT(update()), Qt::QueuedConnection);
 	connect(this, SIGNAL(closeSignal()), this, SLOT(close()), Qt::QueuedConnection);
+	connect(this, SIGNAL(autoMoveSignal()), this, SLOT(autoMoveEvent()), Qt::QueuedConnection);
 	
 	engine_ptr->setExitFunction([this](){emit closeSignal();});
 	engine_ptr->setGuiUpdateFunction([this](){emit updateSignal();});
+	engine_ptr->setAutoUpdateFunction([this](){emit autoMoveSignal();});
 	
 	setBackgroundRole(QPalette::Base);
 	setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
@@ -77,6 +80,9 @@ void Widget::paintEvent(QPaintEvent *)
 	painter.setPen(QPen(QColor(r, g, b), 3));
 	painter.setBrush(QBrush(QColor(r, g, b)));
 	painter.drawEllipse(QRect(pos.x() - 20, pos.y() - 20, 40, 40));
+	QString 		t;
+	QTextStream(&t)<<pos.x()<<':'<<pos.y();
+	painter.drawText(QPoint(0, -height()/2), t);
 }
 
 void Widget::mousePressEvent(QMouseEvent *event){
@@ -106,8 +112,17 @@ void Widget::mouseReleaseEvent(QMouseEvent *event){
     }
 }
 
+void Widget::autoMoveEvent(){
+	int x,y;
+	engine_ptr->getAutoPosition(x, y);
+	pos = QPoint(x, y);
+	engine_ptr->moveEvent(pos.x(), pos.y());
+	update();
+}
+
 void Widget::resizeEvent(QResizeEvent *event){
 	QWidget::resizeEvent(event);
+	engine_ptr->setFrame(width(), height());
 }
 
 }//namespace client

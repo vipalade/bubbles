@@ -27,13 +27,15 @@ public:
 signals:
 	void updateSignal();
 	void closeSignal();
+	void autoMoveSignal();
 protected:
     void mousePressEvent(QMouseEvent *event) Q_DECL_OVERRIDE;
     void mouseMoveEvent(QMouseEvent *event) Q_DECL_OVERRIDE;
     void mouseReleaseEvent(QMouseEvent *event) Q_DECL_OVERRIDE;
     void paintEvent(QPaintEvent *event) Q_DECL_OVERRIDE;
     void resizeEvent(QResizeEvent *event) Q_DECL_OVERRIDE;
-    
+private slots:
+    void autoMoveEvent();
 private:
     bool				antialiased;
 	QPoint				pos;
