@@ -108,16 +108,22 @@ void Widget::mouseReleaseEvent(QMouseEvent *event){
 		pos = event->pos();
 		pos = QPoint(pos.x() - width()/2, pos.y() - height()/2);
         moving = false;
-		update();
+		if(engine_ptr->autoPilot()){
+			autoMoveEvent();
+		}else{
+			update();
+		}
     }
 }
 
 void Widget::autoMoveEvent(){
-	int x,y;
-	engine_ptr->getAutoPosition(x, y);
-	pos = QPoint(x, y);
-	engine_ptr->moveEvent(pos.x(), pos.y());
-	update();
+	if(not moving){
+		int x,y;
+		engine_ptr->getAutoPosition(x, y);
+		pos = QPoint(x, y);
+		engine_ptr->moveEvent(pos.x(), pos.y());
+		update();
+	}
 }
 
 void Widget::resizeEvent(QResizeEvent *event){
