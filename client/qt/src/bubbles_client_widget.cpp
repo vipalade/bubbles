@@ -82,7 +82,7 @@ void Widget::paintEvent(QPaintEvent *)
 	painter.drawEllipse(QRect(pos.x() - 20, pos.y() - 20, 40, 40));
 	QString 		t;
 	QTextStream(&t)<<pos.x()<<':'<<pos.y();
-	painter.drawText(QPoint(0, -height()/2), t);
+	painter.drawText(QPoint(-(width()/2), height()/2), t);
 }
 
 void Widget::mousePressEvent(QMouseEvent *event){
