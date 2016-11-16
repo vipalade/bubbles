@@ -15,8 +15,10 @@
 
 #include "solid/frame/mpipc/mpipcservice.hpp"
 #include "solid/frame/mpipc/mpipcconfiguration.hpp"
+#include "solid/frame/mpipc/mpipcsocketstub_openssl.hpp"
 
 #include "client/engine/bubbles_client_engine.hpp"
+
 #include "protocol/bubbles_messages.hpp"
 
 #include "boost/program_options.hpp"
@@ -53,6 +55,7 @@ struct Parameters{
 	bool					dbg_buffered;
 	
 	bool					secure;
+	bool					auto_pilot;
 	
 	string					connect_endpoint;
 	string					connect_addr;
@@ -278,6 +281,21 @@ int main(int argc, char *argv[]){
 			cfg.client.connection_start_fnc = connection_start_lambda;
 		}
 		
+		if(p.secure){
+			//configure OpenSSL:
+			idbg("Configure SSL ---------------------------------------");
+			frame::mpipc::openssl::setup_client(
+				cfg,
+				[](frame::aio::openssl::Context &_rctx) -> ErrorCodeT{
+					_rctx.loadVerifyFile("bubbles-ca-cert.pem"/*"/etc/pki/tls/certs/ca-bundle.crt"*/);
+					_rctx.loadCertificateFile("bubbles-client-cert.pem");
+					_rctx.loadPrivateKeyFile("bubbles-client-key.pem");
+					return ErrorCodeT();
+				},
+				frame::mpipc::openssl::NameCheckSecureStart{"bubbles-server"}
+			);
+		}
+		
 		err = ipcservice.reconfigure(std::move(cfg));
 		
 		if(err){
@@ -307,7 +325,7 @@ int main(int argc, char *argv[]){
 bool parseArguments(Parameters &_par, int argc, char *argv[]){
 	using namespace boost::program_options;
 	try{
-		options_description desc("SolidFrame ipc stress test");
+		options_description desc("Bubbles client");
 		desc.add_options()
 			("help,h", "List program options")
 			("debug-levels,L", value<string>(&_par.dbg_levels)->default_value("view"),"Debug logging levels")

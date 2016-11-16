@@ -184,9 +184,10 @@ void Engine::onConnectionStart(solid::frame::mpipc::ConnectionContext &_rctx){
 void Engine::onConnectionStop(solid::frame::mpipc::ConnectionContext &_rctx){
 	idbg(_rctx.recipientId()<<' '<<_rctx.error().message());
 	
-	ConnectionData &rcon_data = *_rctx.any().cast<ConnectionData>();
-	if(rcon_data.registered()){
-		unregisterConnection(_rctx, rcon_data);
+	ConnectionData *pcon_data = _rctx.any().cast<ConnectionData>();
+	
+	if(pcon_data and pcon_data->registered()){
+		unregisterConnection(_rctx, *pcon_data);
 	}
 }
 

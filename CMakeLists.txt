@@ -13,6 +13,10 @@ else ()
 	set (CMAKE_CXX_STANDARD 11)
 endif ()
 
+set(OPENSSL_ROOT_DIR "${EXTERN_PATH}")
+
+find_package(OpenSSL)
+
 
 if(CMAKE_SYSTEM MATCHES "Linux*")
 	message("Detected system ON_LINUX")

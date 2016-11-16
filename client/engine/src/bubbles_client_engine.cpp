@@ -410,6 +410,7 @@ void Engine::onMessage(
 		
 		//after activation, the mpipc will start sending pending EventsNotification messages
 		_rctx.service().connectionNotifyEnterActiveState(_rctx.recipientId());
+		d.gui_update_function();
 	}else if(_rrecv_msg_ptr){
 		//failed registering the connection
 		edbg(_rctx.recipientId()<<" Connection registration failed because ["<<_rrecv_msg_ptr->message<<"]. Exiting");

@@ -12,6 +12,32 @@ set(CMAKE_AUTOMOC ON)
 # )
 
 
+add_custom_command(
+	OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/bubbles-ca-cert.pem
+	COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/certs/bubbles-ca-cert.pem ${CMAKE_CURRENT_BINARY_DIR}/bubbles-ca-cert.pem
+	DEPENDS ${PROJECT_SOURCE_DIR}/certs/bubbles-ca-cert.pem
+)
+
+add_custom_command(
+	OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/bubbles-client-key.pem
+	COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/certs/bubbles-client-key.pem ${CMAKE_CURRENT_BINARY_DIR}/bubbles-client-key.pem
+	DEPENDS ${PROJECT_SOURCE_DIR}/certs/bubbles-client-key.pem
+)
+
+add_custom_command(
+	OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/bubbles-client-cert.pem
+	COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/certs/bubbles-client-cert.pem ${CMAKE_CURRENT_BINARY_DIR}/bubbles-client-cert.pem
+	DEPENDS ${PROJECT_SOURCE_DIR}/certs/bubbles-client-cert.pem
+)
+
+add_custom_target(bubbles_client_certs
+	DEPENDS
+	${CMAKE_CURRENT_BINARY_DIR}/bubbles-ca-cert.pem
+	${CMAKE_CURRENT_BINARY_DIR}/bubbles-client-key.pem
+	${CMAKE_CURRENT_BINARY_DIR}/bubbles-client-cert.pem
+)
+
+
 list(APPEND CMAKE_PREFIX_PATH "${EXTERN_PATH}")
 find_package(Qt5Widgets)
 
@@ -29,12 +55,15 @@ if(${Qt5Widgets_FOUND})
 	#	${res}
 		${src_basic_gui}
 	)
-
+	
+	add_dependencies(bubbles_client bubbles_client_certs)
+	
 	target_link_libraries(
 		bubbles_client
 		bubbles_client_engine
 		solid_frame_mpipc
 		solid_frame_aio
+		solid_frame_aio_openssl
 		solid_frame
 		solid_serialization
 		solid_utility
@@ -42,6 +71,7 @@ if(${Qt5Widgets_FOUND})
 		boost_program_options
 		boost_system
 		Qt5::Widgets
+		${OPENSSL_LIBRARIES}
 		${SYS_BASIC_LIBS}
 	)
 endif()
