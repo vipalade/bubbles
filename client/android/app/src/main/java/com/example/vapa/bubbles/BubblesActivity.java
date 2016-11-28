@@ -14,6 +14,7 @@ import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 
 public class BubblesActivity extends AppCompatActivity {
+    BubblesView bubblesView;
     static {
         System.loadLibrary("native-lib");
     }
@@ -53,6 +54,7 @@ public class BubblesActivity extends AppCompatActivity {
 
         Log.i("BubblesActivity", "onResume");
         nativeResume();
+        nativeMove(0, 0);
     }
 
     @Override
@@ -87,4 +89,5 @@ public class BubblesActivity extends AppCompatActivity {
     public native boolean nativeStart(String _endpoint, String _room, boolean _secure, boolean _auto_pilot, String _verify_authority, String _client_cert, String _client_key);
     public native boolean nativePause();
     public native boolean nativeResume();
+    public native void nativeMove(int _x, int _y);
 }

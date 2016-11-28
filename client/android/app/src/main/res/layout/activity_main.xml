@@ -21,7 +21,8 @@
         android:layout_alignParentEnd="true"
         android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true"
-        android:text="test_room" />
+        android:text="test_room"
+        android:contentDescription="room name" />
 
     <CheckBox
         android:text="@string/secure_connection"

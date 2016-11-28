@@ -1,7 +1,7 @@
 <resources>
     <string name="app_name">Bubbles</string>
     <string name="default_server_endpoint">viphost.asuscomm.com:36444</string>
-    <string name="test_room">test_room</string>
+    <string name="test_room">test</string>
     <string name="secure_connection">Secure connection</string>
     <string name="auto_pilot">Auto pilot</string>
     <string name="button_start">Start</string>

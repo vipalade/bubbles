@@ -71,6 +71,11 @@ namespace {
     thread_local JNIEnv                  *local_java_env = nullptr;
     thread_local jmethodID               local_java_bubbles_refresh_method_id;
 
+
+    void exit_callback();
+    void gui_update_callback();
+    void auto_move_callback();
+
 }//namespace
 
 
@@ -115,6 +120,7 @@ namespace bubbles{
                         std::shared_ptr<RegisterResponse> &_rrecv_msg_ptr,
                         ErrorConditionT const &_rerror
                 ){
+                    LOGI("register response");
                     eng.onMessage(_rctx, _rsent_msg_ptr, _rrecv_msg_ptr, _rerror);
                 };
                 _rprotocol.registerType<RegisterResponse>(lambda, _protocol_idx, _message_idx);
@@ -258,7 +264,6 @@ jboolean Java_com_example_vapa_bubbles_BubblesActivity_nativeStart(
 
     LOGI("native start %s secure %d auto_pilot %d", g_ctx.endpoint.c_str(), (int)(_secure == JNI_TRUE), (int)(_auto_pilot == JNI_TRUE));
 
-    return JNI_TRUE;
     g_ctx.engine_ptr = bubbles::client::Engine::create(g_ctx.svc, g_ctx.ipcsvc, bubbles::client::EngineConfiguration{});
 
     ErrorConditionT			err;
@@ -307,7 +312,7 @@ jboolean Java_com_example_vapa_bubbles_BubblesActivity_nativeStart(
 
     if(err){
         //cout<<"Error starting aio resolver: "<<err.message()<<endl;
-        LOGE("native: Error starting aio resolver: %s",err.message().c_str());
+        LOGE("Error starting aio resolver: %s",err.message().c_str());
         return JNI_FALSE;
     }
 
@@ -323,9 +328,11 @@ jboolean Java_com_example_vapa_bubbles_BubblesActivity_nativeStart(
 
         {
             auto connection_stop_lambda = [](frame::mpipc::ConnectionContext &_ctx){
+                LOGI("connection stop");
                 g_ctx.engine_ptr->onConnectionStop(_ctx);
             };
             auto connection_start_lambda = [](frame::mpipc::ConnectionContext &_ctx){
+                LOGI("connection start");
                 g_ctx.engine_ptr->onConnectionStart(_ctx);
             };
             cfg.connection_stop_fnc = connection_stop_lambda;
@@ -334,45 +341,86 @@ jboolean Java_com_example_vapa_bubbles_BubblesActivity_nativeStart(
 
         if(_secure == JNI_TRUE){
             //configure OpenSSL:
-            idbg("Configure SSL ---------------------------------------");
             frame::mpipc::openssl::setup_client(
-                    cfg,
-                    [verify_authority_str, client_cert_str, client_key_str](frame::aio::openssl::Context &_rctx) -> ErrorCodeT {
-                        _rctx.addVerifyAuthority(verify_authority_str);
-                        _rctx.loadCertificate(client_cert_str);
-                        _rctx.loadPrivateKey(client_key_str);
-                        return ErrorCodeT();
-                    },
-                    frame::mpipc::openssl::NameCheckSecureStart{"bubbles-server"}
+                cfg,
+                [verify_authority_str, client_cert_str, client_key_str](frame::aio::openssl::Context &_rctx) -> ErrorCodeT {
+                    _rctx.addVerifyAuthority(verify_authority_str);
+                    _rctx.loadCertificate(client_cert_str);
+                    _rctx.loadPrivateKey(client_key_str);
+                    return ErrorCodeT();
+                },
+                frame::mpipc::openssl::NameCheckSecureStart{"bubbles-server"}
             );
         }
 
         err = g_ctx.ipcsvc.reconfigure(std::move(cfg));
 
         if(err){
-            cout<<"Error starting ipcservice: "<<err.message()<<endl;
-            return 1;
+            LOGE("Error starting ipcservice: %s",err.message().c_str());
+            return JNI_FALSE;
         }
+    }
+
+    {
+        //set the callbacks
+
+        g_ctx.engine_ptr->setExitFunction(exit_callback);
+        g_ctx.engine_ptr->setAutoUpdateFunction(auto_move_callback);
+        g_ctx.engine_ptr->setGuiUpdateFunction(gui_update_callback);
+
     }
 
     err = g_ctx.engine_ptr->start(g_ctx.sch, g_ctx.endpoint, g_ctx.room_name, _auto_pilot == JNI_TRUE);
 
     if(err){
-        cout<<"Error starting engine: "<<err.message()<<endl;
-        return 1;
+        LOGE("Error starting engine: %s",err.message().c_str());
+        return JNI_FALSE;
     }
     g_ctx.started = true;
     return JNI_TRUE;
 }
 
 extern "C"
-jboolean Java_com_example_vapa_bubbles_BubblesActivity_nativePause(){
+jboolean Java_com_example_vapa_bubbles_BubblesActivity_nativePause(
+        JNIEnv *env,
+        jobject _this){
     //g_ctx.ipcsvc.stop();
     LOGI("native: mpipc service stoped");
 }
 
 extern "C"
-jboolean Java_com_example_vapa_bubbles_BubblesActivity_nativeResume(){
+jboolean Java_com_example_vapa_bubbles_BubblesActivity_nativeResume(
+        JNIEnv *env,
+        jobject _this){
     //g_ctx.ipcsvc.start();
     LOGI("native: mpipc service started");
+}
+extern "C"
+jboolean Java_com_example_vapa_bubbles_BubblesActivity_nativeMove(
+        JNIEnv *env,
+        jobject _this, jint _x, jint _y){
+    //g_ctx.ipcsvc.start();
+    LOGI("mpipc service move %d,%d", (int)_x, (int)_y);
+    g_ctx.engine_ptr->moveEvent(_x, _y);
+}
+
+namespace {
+    void exit_callback(){
+        LOGI("exit --------");
+    }
+    void gui_update_callback(){
+        LOGI("gui update");
+
+        bubbles::client::PlotIterator plotit = g_ctx.engine_ptr->plot();
+
+        LOGI("my color = %d", plotit.myRgbColor());
+        while(not plotit.end()){
+            LOGI("color: %d", plotit.rgbColor());
+        }
+    }
+    void auto_move_callback(){
+        int x,y;
+        g_ctx.engine_ptr->getAutoPosition(x, y);
+        //LOGI("auto move: %d, %d", x, y);
+    }
 }
