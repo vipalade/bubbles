@@ -42,17 +42,18 @@ namespace {
     typedef frame::Scheduler<frame::Reactor>        SchedulerT;
     typedef frame::aio::openssl::Context			SecureContextT;
     using BubblesEnginePointerT = bubbles::client::Engine::PointerT;
+    using PlotIteratorT = bubbles::client::PlotIterator;
     struct Context {
         Context(
 
-        ):  vm(nullptr), done(false), started(false), echoActivityClz(nullptr), echoActivityObj(nullptr),
+        ):  vm(nullptr), done(false), started(false), bubblesActivityClz(nullptr), bubblesActivityObj(nullptr),
             m{}, ipcsvc(m), svc(m){}
 
         JavaVM                  *vm;
         bool                    done;
         bool                    started;
-        jclass                  echoActivityClz;
-        jobject                 echoActivityObj;
+        jclass                  bubblesActivityClz;
+        jobject                 bubblesActivityObj;
 
         std::string             endpoint;
         std::string             room_name;
@@ -66,10 +67,13 @@ namespace {
         frame::ServiceT         svc;
         frame::aio::Resolver	resolver;
         BubblesEnginePointerT	engine_ptr;
+        PlotIteratorT           plotit;
     }g_ctx;
 
     thread_local JNIEnv                  *local_java_env = nullptr;
-    thread_local jmethodID               local_java_bubbles_refresh_method_id;
+    thread_local jmethodID               local_java_exit_method_id;
+    thread_local jmethodID               local_java_auto_method_id;
+    thread_local jmethodID               local_java_gui_update_method_id;
 
 
     void exit_callback();
@@ -120,7 +124,6 @@ namespace bubbles{
                         std::shared_ptr<RegisterResponse> &_rrecv_msg_ptr,
                         ErrorConditionT const &_rerror
                 ){
-                    LOGI("register response");
                     eng.onMessage(_rctx, _rsent_msg_ptr, _rrecv_msg_ptr, _rerror);
                 };
                 _rprotocol.registerType<RegisterResponse>(lambda, _protocol_idx, _message_idx);
@@ -258,8 +261,8 @@ jboolean Java_com_example_vapa_bubbles_BubblesActivity_nativeStart(
 
     //g_ctx.echoActivityClz = env->GetObjectClass(_this);
     jclass clz = env->GetObjectClass(_this);
-    g_ctx.echoActivityClz = (jclass)env->NewGlobalRef(clz);
-    g_ctx.echoActivityObj = env->NewGlobalRef(_this);
+    g_ctx.bubblesActivityClz = (jclass)env->NewGlobalRef(clz);
+    g_ctx.bubblesActivityObj = env->NewGlobalRef(_this);
 
 
     LOGI("native start %s secure %d auto_pilot %d", g_ctx.endpoint.c_str(), (int)(_secure == JNI_TRUE), (int)(_auto_pilot == JNI_TRUE));
@@ -283,6 +286,9 @@ jboolean Java_com_example_vapa_bubbles_BubblesActivity_nativeStart(
         }
 
         local_java_env = env;
+        local_java_exit_method_id = env->GetMethodID(g_ctx.bubblesActivityClz, "onNativeRequestExit", "()V");
+        local_java_auto_method_id = env->GetMethodID(g_ctx.bubblesActivityClz, "onNativeRequestAutoUpdate", "(II)V");
+        local_java_gui_update_method_id = env->GetMethodID(g_ctx.bubblesActivityClz, "onNativeRequestGuiUpdate", "()V");
         //local_java_echo_receive_method_id = env->GetMethodID(g_ctx.echoActivityClz,
         //                                                     "onReceiveMessage", "(Ljava/lang/String;I)V");
         return true;
@@ -384,7 +390,7 @@ extern "C"
 jboolean Java_com_example_vapa_bubbles_BubblesActivity_nativePause(
         JNIEnv *env,
         jobject _this){
-    //g_ctx.ipcsvc.stop();
+
     LOGI("native: mpipc service stoped");
 }
 
@@ -392,35 +398,90 @@ extern "C"
 jboolean Java_com_example_vapa_bubbles_BubblesActivity_nativeResume(
         JNIEnv *env,
         jobject _this){
-    //g_ctx.ipcsvc.start();
     LOGI("native: mpipc service started");
 }
 extern "C"
 jboolean Java_com_example_vapa_bubbles_BubblesActivity_nativeMove(
         JNIEnv *env,
         jobject _this, jint _x, jint _y){
-    //g_ctx.ipcsvc.start();
-    LOGI("mpipc service move %d,%d", (int)_x, (int)_y);
+
+    LOGI("move %d,%d", (int)_x, (int)_y);
     g_ctx.engine_ptr->moveEvent(_x, _y);
 }
+
+extern "C"
+jboolean Java_com_example_vapa_bubbles_BubblesActivity_nativeSetFrame(
+        JNIEnv *env,
+        jobject _this, jint _w, jint _h){
+
+    LOGI("setFrame %d,%d", (int)_w, (int)_h);
+    g_ctx.engine_ptr->setFrame(_w, _h);
+}
+
+namespace{
+    inline jint java_color(uint32_t _c){
+        int r = _c & 0xff;
+        int g = (_c >> 8) & 0xff;
+        int b = (_c >> 16) & 0xff;
+        int v = (0xff000000 | (b << 0) | (g << 8) | (r << 16));
+        return v;
+    }
+}
+
+extern "C"
+void Java_com_example_vapa_bubbles_BubblesActivity_nativePlotStart(JNIEnv *env, jobject _this){
+    g_ctx.plotit = g_ctx.engine_ptr->plot();
+}
+
+extern "C"
+jboolean Java_com_example_vapa_bubbles_BubblesActivity_nativePlotEnd(JNIEnv *env, jobject _this){
+    return g_ctx.plotit.end() ? JNI_TRUE : JNI_FALSE;
+}
+
+extern "C"
+jint Java_com_example_vapa_bubbles_BubblesActivity_nativePlotX(JNIEnv *env, jobject _this){
+    return g_ctx.plotit.x();
+}
+
+extern "C"
+jint Java_com_example_vapa_bubbles_BubblesActivity_nativePlotY(JNIEnv *env, jobject _this){
+    return g_ctx.plotit.y();
+}
+
+extern "C"
+jint Java_com_example_vapa_bubbles_BubblesActivity_nativePlotColor(JNIEnv *env, jobject _this){
+    return java_color(g_ctx.plotit.rgbColor());
+}
+
+extern "C"
+jint Java_com_example_vapa_bubbles_BubblesActivity_nativePlotMyColor(JNIEnv *env, jobject _this){
+    return java_color(g_ctx.plotit.myRgbColor());
+}
+
+extern "C"
+void Java_com_example_vapa_bubbles_BubblesActivity_nativePlotDone(JNIEnv *env, jobject _this){
+    return g_ctx.plotit.clear();
+}
+
+extern "C"
+void Java_com_example_vapa_bubbles_BubblesActivity_nativePlotNext(JNIEnv *env, jobject _this){
+    ++g_ctx.plotit;
+}
+
 
 namespace {
     void exit_callback(){
         LOGI("exit --------");
+        local_java_env->CallVoidMethod(g_ctx.bubblesActivityObj, local_java_exit_method_id);
     }
     void gui_update_callback(){
         LOGI("gui update");
-
-        bubbles::client::PlotIterator plotit = g_ctx.engine_ptr->plot();
-
-        LOGI("my color = %d", plotit.myRgbColor());
-        while(not plotit.end()){
-            LOGI("color: %d", plotit.rgbColor());
-        }
+        local_java_env->CallVoidMethod(g_ctx.bubblesActivityObj, local_java_gui_update_method_id);
     }
     void auto_move_callback(){
         int x,y;
         g_ctx.engine_ptr->getAutoPosition(x, y);
-        //LOGI("auto move: %d, %d", x, y);
+        LOGI("auto update %d.%d", x, y);
+        local_java_env->CallVoidMethod(g_ctx.bubblesActivityObj, local_java_auto_method_id, x, y);
     }
 }

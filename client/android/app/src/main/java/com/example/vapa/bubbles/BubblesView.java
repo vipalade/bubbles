@@ -17,6 +17,12 @@ import android.view.View;
 public class BubblesView extends View {
     private Paint mCirclePaint = new Paint();
     private boolean mHasTouch = false;
+    private BubblesActivity activity;
+    private int pointer_x = 0;
+    private int pointer_y = 0;
+
+    private int gui_pointer_x = 0;
+    private int gui_pointer_y = 0;
 
     public BubblesView(Context context) {
         super(context);
@@ -33,6 +39,30 @@ public class BubblesView extends View {
         init(attrs, defStyle);
     }
 
+    public synchronized void setAutoPointerPos(int _x, int _y){
+        if(!mHasTouch){
+            pointer_x = _x;
+            pointer_y = _y;
+            activity.nativeMove(_x, _y);
+        }
+    }
+
+    private synchronized void setPointerPos(int _x, int _y){
+        if(mHasTouch){
+            pointer_x = _x;
+            pointer_y = _y;
+        }
+    }
+
+    private synchronized void getPointerPos(){
+        gui_pointer_x = pointer_x;
+        gui_pointer_y = pointer_y;
+    }
+
+    public void setActivity(BubblesActivity _act){
+        activity = _act;
+    }
+
     private void init(AttributeSet attrs, int defStyle) {
         // Load attributes
 
@@ -45,7 +75,38 @@ public class BubblesView extends View {
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
+        getPointerPos();
+        activity.nativePlotStart();
+        int my_color = activity.nativePlotMyColor();
 
+        canvas.translate(canvas.getWidth()/2, canvas.getHeight()/2);
+
+        while(!activity.nativePlotEnd()) {
+            int x = activity.nativePlotX();
+            int y = activity.nativePlotY();
+            int c = activity.nativePlotColor();
+
+            drawCircle(canvas, x, y, c, 10);
+
+            activity.nativePlotNext();
+        }
+        activity.nativePlotDone();
+        drawCircle(canvas, gui_pointer_x, gui_pointer_y, my_color, 20);
+    }
+
+    void drawCircle(Canvas canvas, int x, int y, int c, int r){
+        mCirclePaint.setColor(c);
+        canvas.drawCircle(x, y, r, mCirclePaint);
+    }
+
+    @Override
+    protected void onSizeChanged (
+                        int w,
+                        int h,
+                        int oldw,
+                        int oldh
+    ){
+        activity.nativeSetFrame(w, h);
     }
 
     // BEGIN_INCLUDE(onTouchEvent)
@@ -63,10 +124,11 @@ public class BubblesView extends View {
 
             case MotionEvent.ACTION_DOWN: {
                 // first pressed gesture has started
-
-                nativeMove(event.getX(0), event.getY(0));
+                int x = (int)(event.getX(0) - this.getWidth()/2);
+                int y = (int)(event.getY(0) - this.getHeight()/2);
+                activity.nativeMove(x, y);
                 mHasTouch = true;
-
+                setPointerPos(x, y);
                 break;
             }
 
@@ -96,7 +158,11 @@ public class BubblesView extends View {
                  * the MotionEvent object and remove it from the list of active
                  * touches.
                  */
-                nativeMove(event.getX(0), event.getY(0));
+
+                int x = (int)(event.getX(0) - this.getWidth()/2);
+                int y = (int)(event.getY(0) - this.getHeight()/2);
+                activity.nativeMove(x, y);
+                setPointerPos(x, y);
 
                 mHasTouch = false;
 
@@ -137,7 +203,10 @@ public class BubblesView extends View {
                  * This identifier is used to keep track of a pointer across
                  * events.
                  */
-                nativeMove(event.getX(0), event.getY(0));
+                int x = (int)(event.getX(0) - this.getWidth()/2);
+                int y = (int)(event.getY(0) - this.getHeight()/2);
+                activity.nativeMove(x, y);
+                setPointerPos(x, y);
 
                 break;
             }

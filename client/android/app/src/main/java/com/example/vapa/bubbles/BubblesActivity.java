@@ -15,6 +15,7 @@ import java.io.UnsupportedEncodingException;
 
 public class BubblesActivity extends AppCompatActivity {
     BubblesView bubblesView;
+
     static {
         System.loadLibrary("native-lib");
     }
@@ -37,15 +38,24 @@ public class BubblesActivity extends AppCompatActivity {
         String client_cert_str = loadAssetFile("certs/bubbles-client-cert.pem");
         String client_key_str = loadAssetFile("certs/bubbles-client-key.pem");
 
+        bubblesView = (BubblesView)findViewById(R.id.bubblesView);
         //Log.i("BubblesActivity", "authority: " + authority_verify_str);
         //Log.i("BubblesActivity", "cert: " + client_cert_str);
         //Log.i("BubblesActivity", "key: " + client_key_str);
+        bubblesView.setActivity(this);
+
 
         if(nativeStart(endpoint_str, room_str, secure, auto_pilot, authority_verify_str, client_cert_str, client_key_str)){
             Log.i("BubblesActivity", "Success starting native engine");
         }else{
             Log.e("BubblesActivity", "Error starting native engine");
         }
+
+    }
+
+    @Override
+    protected void onDestroy(){
+        bubblesView.setActivity(null);
     }
 
     @Override
@@ -86,8 +96,37 @@ public class BubblesActivity extends AppCompatActivity {
 
     }
 
-    public native boolean nativeStart(String _endpoint, String _room, boolean _secure, boolean _auto_pilot, String _verify_authority, String _client_cert, String _client_key);
+    private void onNativeRequestExit(){
+
+    }
+
+    public void onNativeRequestAutoUpdate(int _x, int _y){
+        bubblesView.setAutoPointerPos(_x, _y);
+        bubblesView.postInvalidate();
+    }
+
+    private void onNativeRequestGuiUpdate(){
+        bubblesView.postInvalidate();
+    }
+
+    public native boolean nativeStart(
+            String _endpoint, String _room,
+            boolean _secure, boolean _auto_pilot,
+            String _verify_authority, String _client_cert, String _client_key
+    );
+
     public native boolean nativePause();
     public native boolean nativeResume();
+
     public native void nativeMove(int _x, int _y);
+    public native void nativeSetFrame(int _w, int _h);
+
+    public native void nativePlotStart();
+    public native boolean nativePlotEnd();
+    public native int nativePlotX();
+    public native int nativePlotY();
+    public native int nativePlotColor();
+    public native int nativePlotMyColor();
+    public native void nativePlotDone();
+    public native void nativePlotNext();
 }

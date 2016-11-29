@@ -30,8 +30,10 @@ class Engine;
 
 struct PlotIterator{
 	PlotIterator(PlotIterator &&_plotit);
+	PlotIterator();
 	~PlotIterator();
-	PlotIterator& operator=(PlotIterator &&_plotit) = delete;
+	
+	PlotIterator& operator=(PlotIterator &&_plotit);
 	
 	uint32_t rgbColor()const;
 	int32_t x()const;
@@ -41,6 +43,8 @@ struct PlotIterator{
 	
 	bool end()const;
 	PlotIterator& operator++();
+	
+	void clear();
 	
 	uint32_t myRgbColor()const{
 		return rgb_color;
@@ -52,7 +56,7 @@ private:
 	size_t		pos;
 	size_t		plotdq_index;
 	uint32_t	rgb_color;
-	Engine		&reng;
+	Engine		*peng;
 };
 
 class Engine: public solid::Dynamic<Engine, solid::frame::Object>{

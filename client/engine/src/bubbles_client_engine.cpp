@@ -87,9 +87,12 @@ struct Engine::Data{
 	bool									auto_pilot;
 	Event									last_event;
 	std::shared_ptr<EventsNotification>		events_message_ptr;
+	
+	//all functions must be called on the engine's thread
 	ExitFunctionT							exit_function;
 	GuiUpdateFunctionT						gui_update_function;
 	AutoUpdateFunctionT						auto_update_function;
+	
 	EventsNotificationDequeT				messagedq[2];
 	PlotStubDequeT							plotdq[2];
 	EventStubDequeT							event_stubdq;
@@ -117,40 +120,55 @@ struct Engine::Data{
 
 
 //=============================================================================
-PlotIterator::PlotIterator(PlotIterator &&_plotit):reng(_plotit.reng){
+PlotIterator::PlotIterator(PlotIterator &&_plotit):peng(_plotit.peng){
 	plotdq_index = _plotit.plotdq_index;
 	pos = _plotit.pos;
-	_plotit.plotdq_index = solid::InvalidIndex();
+	_plotit.peng = nullptr;
 	rgb_color = _plotit.rgb_color;
 }
 
+PlotIterator::PlotIterator():peng(nullptr){}
+
 PlotIterator::~PlotIterator(){
-	if(plotdq_index != solid::InvalidIndex()){
-		std::unique_lock<std::mutex>	lock(reng.d.mtx);
-		--reng.d.read_plotdq_count;
-		if(reng.d.read_plotdq_count == 0){
-			reng.d.cnd.notify_one();
+	clear();
+}
+
+void PlotIterator::clear(){
+	if(peng){
+		std::unique_lock<std::mutex>	lock(peng->d.mtx);
+		--peng->d.read_plotdq_count;
+		if(peng->d.read_plotdq_count == 0){
+			peng->d.cnd.notify_one();
 		}
+		peng = nullptr;
 	}
 }
 
+PlotIterator& PlotIterator::operator=(PlotIterator &&_plotit){
+	peng = _plotit.peng;
+	plotdq_index = _plotit.plotdq_index;
+	pos = _plotit.pos;
+	_plotit.peng = nullptr;
+	rgb_color = _plotit.rgb_color;
+	return *this;
+}
 uint32_t PlotIterator::rgbColor()const{
-	return reng.d.plotdq[plotdq_index][pos].rgb_color;
+	return peng->d.plotdq[plotdq_index][pos].rgb_color;
 }
 
 int32_t PlotIterator::x()const{
-	return reng.d.plotdq[plotdq_index][pos].x;
+	return peng->d.plotdq[plotdq_index][pos].x;
 }
 int32_t PlotIterator::y()const{
-	return reng.d.plotdq[plotdq_index][pos].y;
+	return peng->d.plotdq[plotdq_index][pos].y;
 }
 
 const std::string& PlotIterator::text()const{
-	return reng.d.plotdq[plotdq_index][pos].text;
+	return peng->d.plotdq[plotdq_index][pos].text;
 }
 
 bool PlotIterator::end()const{
-	return reng.d.plotdq[plotdq_index].size() == pos;
+	return peng->d.plotdq[plotdq_index].size() == pos;
 }
 
 PlotIterator& PlotIterator::operator++(){
@@ -158,12 +176,12 @@ PlotIterator& PlotIterator::operator++(){
 	return *this;
 }
 
-PlotIterator::PlotIterator(Engine &_reng):reng(_reng){
+PlotIterator::PlotIterator(Engine &_reng):peng(&_reng){
 	pos = 0;
-	std::unique_lock<std::mutex>	lock(reng.d.mtx);
-	plotdq_index = reng.d.read_plotdq_idx;
-	++reng.d.read_plotdq_count;
-	rgb_color = reng.d.rgb_color;
+	std::unique_lock<std::mutex>	lock(peng->d.mtx);
+	plotdq_index = peng->d.read_plotdq_idx;
+	++peng->d.read_plotdq_count;
+	rgb_color = peng->d.rgb_color;
 }
 
 //=============================================================================
@@ -243,6 +261,10 @@ void Engine::onEvent(frame::ReactorContext &_rctx, solid::Event &&_uevent) /*ove
 		doTrySendEvents();
 	}else if(generic_event_category.event(GenericEvents::Message) == _uevent){
 		doProcessIncomingNotifications(_rctx);
+	}else if(generic_event_category.event(GenericEvents::Stop) == _uevent){
+		d.exit_function();
+	}else if(generic_event_category.event(GenericEvents::Raise) == _uevent){
+		d.gui_update_function();
 	}
 }
 
@@ -541,11 +563,12 @@ void Engine::onMessage(
 		
 		//after activation, the mpipc will start sending pending EventsNotification messages
 		_rctx.service().connectionNotifyEnterActiveState(_rctx.recipientId());
-		d.gui_update_function();
+		//d.gui_update_function();
+		d.service.manager().notify(d.service.manager().id(*this), generic_event_category.event(GenericEvents::Raise));
 	}else if(_rrecv_msg_ptr){
 		//failed registering the connection
 		edbg(_rctx.recipientId()<<" Connection registration failed because ["<<_rrecv_msg_ptr->message<<"]. Exiting");
-		d.exit_function();
+		d.service.manager().notify(d.service.manager().id(*this), generic_event_category.event(GenericEvents::Stop));
 	}
 }
 
