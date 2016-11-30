@@ -572,7 +572,7 @@ void Engine::onConnectionStart(solid::frame::mpipc::ConnectionContext &_rctx){
 void Engine::onConnectionStop(solid::frame::mpipc::ConnectionContext &_rctx){
 	idbg(_rctx.recipientId()<<' '<<_rctx.error().message());
 	
-	if(d.events_message_ptr){
+	if(d.events_message_ptr and not d.paused){
 		//connection stopped and there is no activity to send, resend the last event
 		d.events_message_ptr->event_stub.event = d.last_event;
 		

@@ -91,7 +91,9 @@ void Widget::mousePressEvent(QMouseEvent *event){
 		pos = QPoint(pos.x() - width()/2, pos.y() - height()/2);
         moving = true;
 		update();
-    }
+    }else if((event->button() == Qt::RightButton)){
+		engine_ptr->pause();
+	}
 }
 
 void Widget::mouseMoveEvent(QMouseEvent *event){
@@ -104,7 +106,7 @@ void Widget::mouseMoveEvent(QMouseEvent *event){
 }
 
 void Widget::mouseReleaseEvent(QMouseEvent *event){
-	if (event->button() == Qt::LeftButton && moving) {
+	if ((event->button() == Qt::LeftButton) and moving) {
 		pos = event->pos();
 		pos = QPoint(pos.x() - width()/2, pos.y() - height()/2);
         moving = false;
@@ -113,7 +115,9 @@ void Widget::mouseReleaseEvent(QMouseEvent *event){
 		}else{
 			update();
 		}
-    }
+    }else if((event->button() == Qt::RightButton)){
+		engine_ptr->resume();
+	}
 }
 
 void Widget::autoMoveEvent(){
