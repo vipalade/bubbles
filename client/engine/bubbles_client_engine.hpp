@@ -81,6 +81,8 @@ public:
 		uint32_t _rgb_color = 0
 	);
 	
+	void pause();
+	void resume();
 	
 	bool autoPilot()const;
 	
@@ -132,6 +134,7 @@ public:
 		std::shared_ptr<EventsNotificationResponse> &_rrecv_msg_ptr,
 		solid::ErrorConditionT const &_rerror
 	);
+	
 private:
 	Engine(
 		solid::frame::ServiceT &_rsvc, solid::frame::mpipc::Service &_rmpipc,
@@ -147,6 +150,8 @@ private:
 	void doSetAutoUpdateFunction(AutoUpdateFunctionT &&_uf);
 	void doProcessIncomingNotifications(solid::frame::ReactorContext &_rctx);
 	void onAutoPilot(solid::frame::ReactorContext &_rctx);
+	void doPause(solid::frame::ReactorContext &_rctx);
+	void doResume(solid::frame::ReactorContext &_rctx);
 private:
 	friend struct PlotIterator;
 	struct Data;

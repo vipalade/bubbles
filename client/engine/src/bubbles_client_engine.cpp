@@ -42,6 +42,7 @@ using EventStubDequeT = deque<EventStub>;
 using AutoPairT = std::pair<int, int>;
 using AutoAtomicPairT = std::pair<atomic<int>, atomic<int>>;
 using AutoQueueT = std::queue<AutoPairT>;
+using AtomicBoolT = atomic<bool>;
 
 struct Engine::Data{
 	Data(
@@ -55,7 +56,7 @@ struct Engine::Data{
 		auto_crt_w(1280/2), auto_crt_h(720/2), auto_mod_w(0), auto_mod_h(0), auto_frame_changed(false), auto_plot_done(true),
 		auto_plot_idx(0), auto_fill_idx(1),
 		auto_dist_x(-(auto_crt_w/2), auto_crt_w/2), auto_dist_y(-(auto_crt_h/2), auto_crt_h/2),
-		auto_dist_steps(1, 100)
+		auto_dist_steps(1, 100), paused(false)
 	{
 	}
 	
@@ -116,6 +117,8 @@ struct Engine::Data{
 	std::uniform_int_distribution<int>		auto_dist_y;
 	std::uniform_int_distribution<int>		auto_dist_steps;
 	AutoQueueT								auto_q;
+	AtomicBoolT								paused;
+	frame::mpipc::RecipientId				mpipc_recipient;
 };
 
 
@@ -216,6 +219,17 @@ solid::ErrorConditionT Engine::start(
 	return err;
 }
 
+void Engine::pause(){
+	d.paused = true;
+	d.service.manager().notify(d.service.manager().id(*this), generic_event_category.event(GenericEvents::Pause));
+}
+
+void Engine::resume(){
+	if(d.paused){
+		d.service.manager().notify(d.service.manager().id(*this), generic_event_category.event(GenericEvents::Resume));
+	}
+}
+
 PlotIterator Engine::plot(){
 	return PlotIterator(*this);
 }
@@ -263,8 +277,37 @@ void Engine::onEvent(frame::ReactorContext &_rctx, solid::Event &&_uevent) /*ove
 		doProcessIncomingNotifications(_rctx);
 	}else if(generic_event_category.event(GenericEvents::Stop) == _uevent){
 		d.exit_function();
-	}else if(generic_event_category.event(GenericEvents::Raise) == _uevent){
-		d.gui_update_function();
+	}else if(generic_event_category.event(GenericEvents::Update) == _uevent){
+		if(not d.paused){
+			d.gui_update_function();
+		}
+	}else if(generic_event_category.event(GenericEvents::Pause) == _uevent){
+		doPause(_rctx);
+	}else if(generic_event_category.event(GenericEvents::Resume) == _uevent){
+		doResume(_rctx);
+	}
+}
+
+void Engine::doPause(solid::frame::ReactorContext &_rctx){
+	auto lambda = [](solid::frame::mpipc::ConnectionContext &_rctx){};
+	d.rmpipc.forceCloseConnectionPool(d.mpipc_recipient, lambda);
+}
+
+void Engine::doResume(solid::frame::ReactorContext &_rctx){
+	d.paused = false;
+	if(d.events_message_ptr){
+		d.events_message_ptr->event_stub.event = d.last_event;
+		std::shared_ptr<EventsNotification> tmp_ptr{std::move(d.events_message_ptr)};
+		d.rmpipc.sendMessage(d.server_endpoint.c_str(), tmp_ptr);
+	}
+	//clear all events
+	auto& rplotdq = d.plotdq[d.write_plotdq_idx];
+	
+	rplotdq.clear();
+	d.event_stubdq.clear();
+	
+	if(autoPilot()){
+		this->post(_rctx, [this](solid::frame::ReactorContext &_rctx, solid::Event&&){onAutoPilot(_rctx);});
 	}
 }
 
@@ -287,8 +330,8 @@ void Engine::onAutoPilot(solid::frame::ReactorContext &_rctx){
 		d.auto_dist_x = std::uniform_int_distribution<>(-(d.auto_crt_w/2), d.auto_crt_w/2);
 		d.auto_dist_y = std::uniform_int_distribution<>(-(d.auto_crt_h/2), d.auto_crt_h/2);
 	}
-	
-	if(d.auto_q.size()){
+	if(d.paused){
+	}else if(d.auto_q.size()){
 		if(d.auto_plot_done){
 			d.auto_plot[d.auto_fill_idx] = d.auto_q.front();
 			d.auto_q.pop();
@@ -455,12 +498,13 @@ void Engine::doProcessIncomingNotifications(solid::frame::ReactorContext &_rctx)
 	for(auto& plot_stub: d.plotdq[d.write_plotdq_idx]){
 		plot_stub.ploted = true;
 	}
-	
-	//update gui
-	d.gui_update_function();
-	
-	if(d.event_stubdq.size()){
-		d.timer.waitUntil(_rctx, _rctx.time() + 20, [this](solid::frame::ReactorContext &_rctx){doProcessIncomingNotifications(_rctx);});
+	if(not d.paused){
+		//update gui
+		d.gui_update_function();
+		
+		if(d.event_stubdq.size()){
+			d.timer.waitUntil(_rctx, _rctx.time() + 20, [this](solid::frame::ReactorContext &_rctx){doProcessIncomingNotifications(_rctx);});
+		}
 	}
 }
 
@@ -472,7 +516,7 @@ void Engine::doTrySendEvents(std::shared_ptr<EventsNotification> &&_rrecv_msg_pt
 		if(_rrecv_msg_ptr){
 			d.events_message_ptr = std::move(_rrecv_msg_ptr);
 		}
-		if(d.events_message_ptr){
+		if(d.events_message_ptr and not d.paused){
 			//the message is ready to fill - see which of the eventq we should use
 			if(d.discarded_on_push){
 				//the push eventq is already rotating, drop what remains on pop_eventq
@@ -515,12 +559,19 @@ void Engine::doTrySendEvents(std::shared_ptr<EventsNotification> &&_rrecv_msg_pt
 
 void Engine::onConnectionStart(solid::frame::mpipc::ConnectionContext &_rctx){
 	idbg(_rctx.recipientId());
-	auto msg_ptr = std::make_shared<RegisterRequest>(d.room_name, d.rgb_color);
-	SOLID_CHECK_ERROR(_rctx.service().sendMessage(_rctx.recipientId(), msg_ptr, 0|frame::mpipc::MessageFlags::WaitResponse));
+	if(not d.paused){
+		d.mpipc_recipient = _rctx.recipientId();
+		auto msg_ptr = std::make_shared<RegisterRequest>(d.room_name, d.rgb_color);
+		SOLID_CHECK_ERROR(_rctx.service().sendMessage(_rctx.recipientId(), msg_ptr, 0|frame::mpipc::MessageFlags::WaitResponse));
+	}else{
+		auto lambda = [](solid::frame::mpipc::ConnectionContext &_rctx){};
+		d.rmpipc.forceCloseConnectionPool(_rctx.recipientId(), lambda);
+	}
 }
 
 void Engine::onConnectionStop(solid::frame::mpipc::ConnectionContext &_rctx){
 	idbg(_rctx.recipientId()<<' '<<_rctx.error().message());
+	
 	if(d.events_message_ptr){
 		//connection stopped and there is no activity to send, resend the last event
 		d.events_message_ptr->event_stub.event = d.last_event;
@@ -556,15 +607,21 @@ void Engine::onMessage(
 	
 	idbg(_rctx.recipientId()<<" error: "<<_rerror.message());
 	
+	if(d.paused) return;
+	
 	if(_rrecv_msg_ptr and _rrecv_msg_ptr->success()){
 		d.rgb_color = _rrecv_msg_ptr->rgb_color;
 		
 		idbg(_rctx.recipientId()<<" MY COLOR: "<<d.rgb_color);
+		//clear all events
+		auto& rplotdq = d.plotdq[d.write_plotdq_idx];
+		
+		rplotdq.clear();
+		d.event_stubdq.clear();
 		
 		//after activation, the mpipc will start sending pending EventsNotification messages
 		_rctx.service().connectionNotifyEnterActiveState(_rctx.recipientId());
-		//d.gui_update_function();
-		d.service.manager().notify(d.service.manager().id(*this), generic_event_category.event(GenericEvents::Raise));
+		d.service.manager().notify(d.service.manager().id(*this), generic_event_category.event(GenericEvents::Update));
 	}else if(_rrecv_msg_ptr){
 		//failed registering the connection
 		edbg(_rctx.recipientId()<<" Connection registration failed because ["<<_rrecv_msg_ptr->message<<"]. Exiting");

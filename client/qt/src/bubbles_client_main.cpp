@@ -287,7 +287,7 @@ int main(int argc, char *argv[]){
 			frame::mpipc::openssl::setup_client(
 				cfg,
 				[](frame::aio::openssl::Context &_rctx) -> ErrorCodeT{
-					_rctx.loadVerifyFile("bubbles-ca-cert.pem"/*"/etc/pki/tls/certs/ca-bundle.crt"*/);
+					_rctx.loadVerifyFile("bubbles-ca-cert.pem");
 					_rctx.loadCertificateFile("bubbles-client-cert.pem");
 					_rctx.loadPrivateKeyFile("bubbles-client-key.pem");
 					return ErrorCodeT();

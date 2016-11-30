@@ -391,21 +391,23 @@ jboolean Java_com_example_vapa_bubbles_BubblesActivity_nativePause(
         JNIEnv *env,
         jobject _this){
 
-    LOGI("native: mpipc service stoped");
+    LOGI("native: engine stoped");
+    g_ctx.engine_ptr->pause();
 }
 
 extern "C"
 jboolean Java_com_example_vapa_bubbles_BubblesActivity_nativeResume(
         JNIEnv *env,
         jobject _this){
-    LOGI("native: mpipc service started");
+    LOGI("native: engine started");
+    g_ctx.engine_ptr->resume();
 }
 extern "C"
 jboolean Java_com_example_vapa_bubbles_BubblesActivity_nativeMove(
         JNIEnv *env,
         jobject _this, jint _x, jint _y){
 
-    LOGI("move %d,%d", (int)_x, (int)_y);
+    //LOGI("move %d,%d", (int)_x, (int)_y);
     g_ctx.engine_ptr->moveEvent(_x, _y);
 }
 
@@ -475,13 +477,13 @@ namespace {
         local_java_env->CallVoidMethod(g_ctx.bubblesActivityObj, local_java_exit_method_id);
     }
     void gui_update_callback(){
-        LOGI("gui update");
+        //LOGI("gui update");
         local_java_env->CallVoidMethod(g_ctx.bubblesActivityObj, local_java_gui_update_method_id);
     }
     void auto_move_callback(){
         int x,y;
         g_ctx.engine_ptr->getAutoPosition(x, y);
-        LOGI("auto update %d.%d", x, y);
+        //LOGI("auto update %d.%d", x, y);
         local_java_env->CallVoidMethod(g_ctx.bubblesActivityObj, local_java_auto_method_id, x, y);
     }
 }
