@@ -1,9 +1,6 @@
 # bubbles: sample client-server using SolidFrame
 
-Sample project on how to use SolidFrame mpipc library in a secured (SSL) client-server scenario.
-While the server is Linux only, there are two sample clients:
- * one for Linux (should work on FreeBSD and macOS with minimum effort), using Qt
- * another one for Android
+Exemplifies how to use SolidFrame mpipc library in a secured (SSL) client-server scenario.
 
 [client/android](client/android) is an example of how to use SolidFrame framework and especially the solid::frame::mpipc library allong with BoringSSL in an Android application.
 
@@ -13,7 +10,7 @@ __bubbles__ is a client-server application. It consists of:
  * a server running on Linux
  * a client running on
    * Linux (macOS and FreeBSD should also work - not tested) using Qt for GUI
-   * Android using Java Native Interface to use C++ code in a Java application.
+   * Android using Java Native Interface
 
 ### The client
 
@@ -25,7 +22,7 @@ So, every client will display in real time all the bubbles in a room at the posi
 
 #### Implementation
 The frontend is implemented using either Qt (for desktop clients) or Java for Android application.
-The backend is implemented in C++ and relies on solid_frame libraries (especially on solid_frame_mpipc for communication) and on OpenSSL (on desktop)/BoringSSL (on Android) for secure communication.
+The backend engine is implemented in C++ and relies on solid_frame libraries (especially on solid_frame_mpipc for communication) and on OpenSSL (on desktop)/BoringSSL (on Android) to secure the communication.
 
 
 ### The server
@@ -37,13 +34,13 @@ The backend is implemented in C++ and relies on solid_frame libraries (especiall
 
 #### Implementation
 
-The server is a C++ application using solid_frame libraries (most important solid_frame_mpipc for communication), OpenSSL for secure communication and boost for parsing command line parameters.
+The server is a C++ application using solid_frame libraries (most important solid_frame_mpipc for communication), OpenSSL to secure communication and boost for parsing command line parameters.
 
 ### Workflow
- * connect to the server and registers on a room using either a given color or requesting a new color
- * the server will respond with a unique color (which may not be the requested one) and push to the client the positions and color of all other bubbles in the room
+ * the client connects to the server and registers on a room using either a given color or requesting a new color
+ * the server will respond with a unique color (which may not be the requested one) and push to the client the positions and colors of all other bubbles in the room
  * the client will start displaying the bubbles
- * the client will start sending its initial bubble position
+ * the client will send its initial bubble position
  * the client will continue sending the personal bubble position when it changes
  * the server will continue to push other bubbles position changes to the client.
 
