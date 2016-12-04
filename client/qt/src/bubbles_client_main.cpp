@@ -335,10 +335,10 @@ bool parseArguments(Parameters &_par, int argc, char *argv[]){
 			("debug-console,C", value<bool>(&_par.dbg_console)->implicit_value(true)->default_value(false), "Debug console")
 			("debug-unbuffered,S", value<bool>(&_par.dbg_buffered)->implicit_value(false)->default_value(true), "Debug unbuffered")
 			
-			("connect,c", value<std::string>(&_par.connect_endpoint)->default_value("localhost:2000"), "Server endpoint: address:port")
+			("connect,c", value<std::string>(&_par.connect_endpoint)->default_value("viphost.asuscomm.com:36444"), "Server endpoint: address:port")
 			("room,r", value<std::string>(&_par.room_name)->default_value("test"), "Connect room")
-			("secure,s", value<bool>(&_par.secure)->implicit_value(true)->default_value(false), "Use SSL to secure communication")
-			("auto,a", value<bool>(&_par.auto_pilot)->implicit_value(true)->default_value(false), "Auto randomly move the bubble")
+			("secure,s", value<bool>(&_par.secure)->implicit_value(true)->default_value(true), "Use SSL to secure communication")
+			("auto,a", value<bool>(&_par.auto_pilot)->implicit_value(true)->default_value(true), "Auto randomly move the bubble")
 		;
 		variables_map vm;
 		store(parse_command_line(argc, argv, desc), vm);

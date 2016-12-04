@@ -209,9 +209,9 @@ bool parseArguments(Parameters &_par, int argc, char *argv[]){
 			("debug-console,C", value<bool>(&_par.dbg_console)->implicit_value(true)->default_value(false), "Debug console")
 			("debug-unbuffered,S", value<bool>(&_par.dbg_buffered)->implicit_value(false)->default_value(true), "Debug unbuffered")
 			
-			("listen-port,p", value<std::string>(&_par.listener_port)->default_value("2000"), "IPC Listen port")
+			("listen-port,p", value<std::string>(&_par.listener_port)->default_value("4444"), "IPC Listen port")
 			("listen-addr,a", value<std::string>(&_par.listener_addr)->default_value("0.0.0.0"), "IPC Listen address")
-			("secure,s", value<bool>(&_par.secure)->implicit_value(true)->default_value(false), "Use SSL to secure communication")
+			("secure,s", value<bool>(&_par.secure)->implicit_value(true)->default_value(true), "Use SSL to secure communication")
 		;
 		variables_map vm;
 		store(parse_command_line(argc, argv, desc), vm);
