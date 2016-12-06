@@ -167,7 +167,7 @@ int main(int argc, char *argv[]){
 						_rctx.loadPrivateKeyFile("bubbles-server-key.pem");
 						return ErrorCodeT();
 					},
-					frame::mpipc::openssl::NameCheckSecureStart{"bubbles-client"}
+					frame::mpipc::openssl::NameCheckSecureStart{"bubbles-client"}//does nothing - OpenSSL does not check for hostname on SSL_accept
 				);
 			}
 			
