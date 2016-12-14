@@ -4,3 +4,5 @@ add_library (bubbles_client_engine
 	src/bubbles_client_engine.cpp
 )
 
+target_link_libraries(bubbles_client_engine solid_frame_mpipc)
+

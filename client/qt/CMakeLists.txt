@@ -62,16 +62,11 @@ if(${Qt5Widgets_FOUND})
 		bubbles_client
 		bubbles_client_engine
 		solid_frame_mpipc
-		solid_frame_aio
 		solid_frame_aio_openssl
-		solid_frame
 		solid_serialization
-		solid_utility
-		solid_system
 		boost_program_options
 		boost_system
 		Qt5::Widgets
-		${OPENSSL_LIBRARIES}
 		${SYS_BASIC_LIBS}
 	)
 endif()
