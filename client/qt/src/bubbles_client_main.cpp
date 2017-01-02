@@ -16,6 +16,7 @@
 #include "solid/frame/mpipc/mpipcservice.hpp"
 #include "solid/frame/mpipc/mpipcconfiguration.hpp"
 #include "solid/frame/mpipc/mpipcsocketstub_openssl.hpp"
+#include "solid/frame/mpipc/mpipccompression_snappy.hpp"
 
 #include "client/engine/bubbles_client_engine.hpp"
 
@@ -55,6 +56,7 @@ struct Parameters{
 	bool					dbg_buffered;
 	
 	bool					secure;
+	bool					compress;
 	bool					auto_pilot;
 	
 	string					connect_endpoint;
@@ -296,6 +298,10 @@ int main(int argc, char *argv[]){
 			);
 		}
 		
+		if(p.compress){
+			frame::mpipc::snappy::setup(cfg);
+		}
+		
 		err = ipcservice.reconfigure(std::move(cfg));
 		
 		if(err){
@@ -338,6 +344,7 @@ bool parseArguments(Parameters &_par, int argc, char *argv[]){
 			("connect,c", value<std::string>(&_par.connect_endpoint)->default_value("viphost.asuscomm.com:36444"), "Server endpoint: address:port")
 			("room,r", value<std::string>(&_par.room_name)->default_value("test"), "Connect room")
 			("secure,s", value<bool>(&_par.secure)->implicit_value(true)->default_value(true), "Use SSL to secure communication")
+			("compress", value<bool>(&_par.compress)->implicit_value(true)->default_value(true), "Use Snappy to compress communication")
 			("auto,a", value<bool>(&_par.auto_pilot)->implicit_value(true)->default_value(true), "Auto randomly move the bubble")
 		;
 		variables_map vm;

@@ -43,6 +43,7 @@ target_link_libraries (bubbles_server
 	solid_serialization
 	boost_program_options
 	boost_system
+	snappy
 	${SYS_BASIC_LIBS}
 	${SYS_DYNAMIC_LOAD_LIB}
 )
