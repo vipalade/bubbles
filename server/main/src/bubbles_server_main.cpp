@@ -8,6 +8,7 @@
 #include "solid/frame/mpipc/mpipcservice.hpp"
 #include "solid/frame/mpipc/mpipcconfiguration.hpp"
 #include "solid/frame/mpipc/mpipcsocketstub_openssl.hpp"
+#include "solid/frame/mpipc/mpipccompression_snappy.hpp"
 
 #include "protocol/bubbles_messages.hpp"
 
@@ -37,6 +38,7 @@ struct Parameters{
 	bool					dbg_buffered;
 	
 	bool					secure;
+	bool					compress;
 	string					listener_port;
 	string					listener_addr;
 };
@@ -171,6 +173,10 @@ int main(int argc, char *argv[]){
 				);
 			}
 			
+			if(p.compress){
+				frame::mpipc::snappy::setup(cfg);
+			}
+			
 			err = ipcservice.reconfigure(std::move(cfg));
 			
 			if(err){
@@ -212,6 +218,7 @@ bool parseArguments(Parameters &_par, int argc, char *argv[]){
 			("listen-port,p", value<std::string>(&_par.listener_port)->default_value("4444"), "IPC Listen port")
 			("listen-addr,a", value<std::string>(&_par.listener_addr)->default_value("0.0.0.0"), "IPC Listen address")
 			("secure,s", value<bool>(&_par.secure)->implicit_value(true)->default_value(true), "Use SSL to secure communication")
+			("compress", value<bool>(&_par.compress)->implicit_value(true)->default_value(true), "Use Snappy to compress communication")
 		;
 		variables_map vm;
 		store(parse_command_line(argc, argv, desc), vm);
