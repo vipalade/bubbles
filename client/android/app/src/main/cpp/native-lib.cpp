@@ -38,9 +38,9 @@ static const char* kTAG = "bubbles-native";
   ((void)__android_log_print(ANDROID_LOG_ERROR, kTAG, __VA_ARGS__))
 
 namespace {
-    typedef frame::Scheduler<frame::aio::Reactor>	AioSchedulerT;
+    typedef frame::Scheduler<frame::aio::Reactor>   AioSchedulerT;
     typedef frame::Scheduler<frame::Reactor>        SchedulerT;
-    typedef frame::aio::openssl::Context			SecureContextT;
+    typedef frame::aio::openssl::Context            SecureContextT;
     using BubblesEnginePointerT = bubbles::client::Engine::PointerT;
     using PlotIteratorT = bubbles::client::PlotIterator;
     struct Context {
@@ -58,15 +58,15 @@ namespace {
         std::string             endpoint;
         std::string             room_name;
 
-        AioSchedulerT			aio_sch;
+        AioSchedulerT           aio_sch;
         SchedulerT              sch;
 
 
-        frame::Manager			m;
-        frame::mpipc::ServiceT	ipcsvc;
+        frame::Manager          m;
+        frame::mpipc::ServiceT  ipcsvc;
         frame::ServiceT         svc;
-        frame::aio::Resolver	resolver;
-        BubblesEnginePointerT	engine_ptr;
+        frame::aio::Resolver    resolver;
+        BubblesEnginePointerT   engine_ptr;
         PlotIteratorT           plotit;
     }g_ctx;
 
@@ -269,7 +269,7 @@ jboolean Java_com_example_vapa_bubbles_BubblesActivity_nativeStart(
 
     g_ctx.engine_ptr = bubbles::client::Engine::create(g_ctx.svc, g_ctx.ipcsvc, bubbles::client::EngineConfiguration{});
 
-    ErrorConditionT			err;
+    ErrorConditionT         err;
     auto thr_enter = []() {
 
         JavaVM *javaVM = g_ctx.vm;
@@ -323,8 +323,8 @@ jboolean Java_com_example_vapa_bubbles_BubblesActivity_nativeStart(
     }
 
     {
-        auto 						proto = frame::mpipc::serialization_v1::Protocol::create(serialization::binary::Limits(256, 128, 0));//small limits by default
-        frame::mpipc::Configuration	cfg(g_ctx.aio_sch, proto);
+        auto                        proto = frame::mpipc::serialization_v1::Protocol::create(serialization::binary::Limits(256, 128, 0));//small limits by default
+        frame::mpipc::Configuration cfg(g_ctx.aio_sch, proto);
 
         bubbles::ProtoSpecT::setup<bubbles::client::MessageSetup>(*proto, 0, std::ref(*g_ctx.engine_ptr));
 

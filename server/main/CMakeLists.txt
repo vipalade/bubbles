@@ -9,28 +9,28 @@
 # openssl x509 -req -in client-req.pem -days 1000 -CA ca-cert.pem -CAkey ca-key.pem -set_serial 01 > client-cert.pem
 
 add_custom_command(
-	OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/bubbles-ca-cert.pem
-	COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/certs/bubbles-ca-cert.pem ${CMAKE_CURRENT_BINARY_DIR}/bubbles-ca-cert.pem
-	DEPENDS ${PROJECT_SOURCE_DIR}/certs/bubbles-ca-cert.pem
+    OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/bubbles-ca-cert.pem
+    COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/certs/bubbles-ca-cert.pem ${CMAKE_CURRENT_BINARY_DIR}/bubbles-ca-cert.pem
+    DEPENDS ${PROJECT_SOURCE_DIR}/certs/bubbles-ca-cert.pem
 )
 
 add_custom_command(
-	OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/bubbles-server-key.pem
-	COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/certs/bubbles-server-key.pem ${CMAKE_CURRENT_BINARY_DIR}/bubbles-server-key.pem
-	DEPENDS ${PROJECT_SOURCE_DIR}/certs/bubbles-server-key.pem
+    OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/bubbles-server-key.pem
+    COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/certs/bubbles-server-key.pem ${CMAKE_CURRENT_BINARY_DIR}/bubbles-server-key.pem
+    DEPENDS ${PROJECT_SOURCE_DIR}/certs/bubbles-server-key.pem
 )
 
 add_custom_command(
-	OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/bubbles-server-cert.pem
-	COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/certs/bubbles-server-cert.pem ${CMAKE_CURRENT_BINARY_DIR}/bubbles-server-cert.pem
-	DEPENDS ${PROJECT_SOURCE_DIR}/certs/bubbles-server-cert.pem
+    OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/bubbles-server-cert.pem
+    COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/certs/bubbles-server-cert.pem ${CMAKE_CURRENT_BINARY_DIR}/bubbles-server-cert.pem
+    DEPENDS ${PROJECT_SOURCE_DIR}/certs/bubbles-server-cert.pem
 )
 
 add_custom_target(bubbles_server_certs
-	DEPENDS
-	${CMAKE_CURRENT_BINARY_DIR}/bubbles-ca-cert.pem
-	${CMAKE_CURRENT_BINARY_DIR}/bubbles-server-key.pem
-	${CMAKE_CURRENT_BINARY_DIR}/bubbles-server-cert.pem
+    DEPENDS
+    ${CMAKE_CURRENT_BINARY_DIR}/bubbles-ca-cert.pem
+    ${CMAKE_CURRENT_BINARY_DIR}/bubbles-server-key.pem
+    ${CMAKE_CURRENT_BINARY_DIR}/bubbles-server-cert.pem
 )
 
 add_executable (bubbles_server src/bubbles_server_main.cpp src/bubbles_server_engine.cpp ../../protocol/bubbles_messages.hpp)
@@ -38,13 +38,13 @@ add_executable (bubbles_server src/bubbles_server_main.cpp src/bubbles_server_en
 add_dependencies(bubbles_server bubbles_server_certs)
 
 target_link_libraries (bubbles_server
-	solid_frame_mpipc
-	solid_frame_aio_openssl
-	solid_serialization
-	boost_program_options
-	boost_system
-	snappy
-	${SYS_BASIC_LIBS}
-	${SYS_DYNAMIC_LOAD_LIB}
+    solid_frame_mpipc
+    solid_frame_aio_openssl
+    solid_serialization
+    boost_program_options
+    boost_system
+    snappy
+    ${SYS_BASIC_LIBS}
+    ${SYS_DYNAMIC_LOAD_LIB}
 )
 

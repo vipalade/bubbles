@@ -22,12 +22,12 @@ public:
 
     QSize minimumSizeHint() const Q_DECL_OVERRIDE;
     QSize sizeHint() const Q_DECL_OVERRIDE;
-	
-	void start();
+
+    void start();
 signals:
-	void updateSignal();
-	void closeSignal();
-	void autoMoveSignal();
+    void updateSignal();
+    void closeSignal();
+    void autoMoveSignal();
 protected:
     void mousePressEvent(QMouseEvent *event) Q_DECL_OVERRIDE;
     void mouseMoveEvent(QMouseEvent *event) Q_DECL_OVERRIDE;
@@ -37,10 +37,10 @@ protected:
 private slots:
     void autoMoveEvent();
 private:
-    bool				antialiased;
-	QPoint				pos;
-	bool				moving;
-	Engine::PointerT	&engine_ptr;
+    bool                antialiased;
+    QPoint              pos;
+    bool                moving;
+    Engine::PointerT    &engine_ptr;
 };
 
 }//namespace client
