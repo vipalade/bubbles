@@ -99,8 +99,8 @@ struct Engine::Data{
 	EventStubDequeT							event_stubdq;
 	mutex									mtx;
 	condition_variable						cnd;
-	frame::Timer							timer;
-	frame::Timer							auto_timer;
+	frame::SteadyTimer						timer;
+	frame::SteadyTimer						auto_timer;
 	
 	int										auto_crt_w;
 	int										auto_crt_h;
@@ -337,7 +337,7 @@ void Engine::onAutoPilot(solid::frame::ReactorContext &_rctx){
 			d.auto_q.pop();
 			d.auto_fill_idx = d.auto_plot_idx.exchange(d.auto_fill_idx);
 			d.auto_plot_done = false;
-			d.auto_timer.waitUntil(_rctx, _rctx.time() + 100, [this](solid::frame::ReactorContext &_rctx){onAutoPilot(_rctx);});
+			d.auto_timer.waitUntil(_rctx, _rctx.steadyTime() + std::chrono::milliseconds(100), [this](solid::frame::ReactorContext &_rctx){onAutoPilot(_rctx);});
 			d.auto_update_function();
 		}else{
 			this->post(_rctx, [this](solid::frame::ReactorContext &_rctx, solid::Event&&){onAutoPilot(_rctx);});
@@ -503,7 +503,7 @@ void Engine::doProcessIncomingNotifications(solid::frame::ReactorContext &_rctx)
 		d.gui_update_function();
 		
 		if(d.event_stubdq.size()){
-			d.timer.waitUntil(_rctx, _rctx.time() + 20, [this](solid::frame::ReactorContext &_rctx){doProcessIncomingNotifications(_rctx);});
+			d.timer.waitUntil(_rctx,  _rctx.steadyTime() + std::chrono::milliseconds(20), [this](solid::frame::ReactorContext &_rctx){doProcessIncomingNotifications(_rctx);});
 		}
 	}
 }
