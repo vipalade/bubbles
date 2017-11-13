@@ -101,12 +101,18 @@ $ make
 
 ```
 
-run the server:
+run the server with secure communication enabled:
 
 ```bash
-# run the server:
-$ ./bubbles_server -p 4444 -s
+$ ./bubbles_server -p 4444
 ```
+
+or, run the server with plain communication:
+
+```bash
+$ ./bubbles_server -p 4444 -s 0
+```
+
 
 ### With Qt client
 
@@ -137,7 +143,7 @@ $ cd client/qt
 $ make
 ```
 
-run the client:
+run the client with secure communication:
 
 ```bash
 # launch multiple bubbles clients:
@@ -146,6 +152,18 @@ $ ./bubbles_client -c localhost:4444 &
 $ ./bubbles_client -c localhost:4444 &
 $ ./bubbles_client -c localhost:4444 &
 ```
+or, run the client with plain communication:
+
+```bash
+# launch multiple bubbles clients:
+$ ./bubbles_client -c localhost:4444 -s 0 &
+$ ./bubbles_client -c localhost:4444 -s 0 &
+$ ./bubbles_client -c localhost:4444 -s 0 &
+$ ./bubbles_client -c localhost:4444 -s 0 &
+```
+
+Launching the clients without any parameters will try to connect to a default internet server (not always online!).
+
 
 ### With Android client
 
