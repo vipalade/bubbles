@@ -203,26 +203,28 @@ void Engine::onMessage(
     ConnectionData &rcon_data = *_rctx.any().cast<ConnectionData>();
 
     uint32_t    error_id = 0;
+    solid::ErrorConditionT  err;
 
     if(not rcon_data.registered()){
         uint32_t    rgb_color;
         error_id = registerConnection(_rctx, rcon_data, *_rrecv_msg_ptr, rgb_color);
 
         if(error_id == 0){
-            SOLID_CHECK_ERROR(_rctx.service().sendMessage(
+            
+            SOLID_CHECK(!(err = _rctx.service().sendMessage(
                 _rctx.recipientId(),
-                std::make_shared<RegisterResponse>(*_rrecv_msg_ptr, rgb_color), 0|frame::mpipc::MessageFlags::Synchronous
-            ));
+                std::make_shared<RegisterResponse>(*_rrecv_msg_ptr, rgb_color), {frame::mpipc::MessageFlagsE::Synchronous}
+            )), "failed send message: "<<err.message());
             return;
         }
     }else{
         error_id = ErrorAlreadyRegistered;
     }
 
-    SOLID_CHECK_ERROR(_rctx.service().sendResponse(
+    SOLID_CHECK(!(err = _rctx.service().sendResponse(
         _rctx.recipientId(),
-        std::make_shared<RegisterResponse>(*_rrecv_msg_ptr, error_id, error_message(error_id)), 0|frame::mpipc::MessageFlags::Synchronous
-    ));
+        std::make_shared<RegisterResponse>(*_rrecv_msg_ptr, error_id, error_message(error_id)), {frame::mpipc::MessageFlagsE::Synchronous}
+    )), "failed send message: "<<err.message());
     _rctx.service().delayCloseConnectionPool(_rctx.recipientId(), [](frame::mpipc::ConnectionContext &/*_rctx*/){});
 }
 
@@ -272,8 +274,8 @@ void Engine::onMessage(
 
                 if(i != rcon_data.room_entry_index and rcon.canAcceptEventsNotification(d.config, *_rrecv_msg_ptr, rcon_data.room_entry_index)){
                     rcon.pending_count += (1 + _rrecv_msg_ptr->event_stub.events.size());
-                    _rrecv_msg_ptr->clearState();
-                    _rctx.service().sendMessage(rcon.id, _rrecv_msg_ptr, 0|frame::mpipc::MessageFlags::Synchronous);
+                    _rrecv_msg_ptr->clearStateFlags();
+                    _rctx.service().sendMessage(rcon.id, _rrecv_msg_ptr, {frame::mpipc::MessageFlagsE::Synchronous});
                 }else if(i != rcon_data.room_entry_index){
                     idbg(_rctx.recipientId()<<" not sent to "<<i<<" pending count = "<<rcon.pending_count);
                 }
@@ -344,7 +346,8 @@ void Engine::fetchLastEvents(
     }
     if(_msg_ptr->event_stubs.size() or not _msg_ptr->event_stub.empty()){
         rcrtcon.pending_count += (1 + _msg_ptr->event_stubs.size());
-        SOLID_CHECK_ERROR(_rctx.service().sendMessage(rcrtcon.id, _msg_ptr, 0|frame::mpipc::MessageFlags::Synchronous));
+        solid::ErrorConditionT  err;
+        SOLID_CHECK(!(err = _rctx.service().sendMessage(rcrtcon.id, _msg_ptr, {frame::mpipc::MessageFlagsE::Synchronous})), "failed send message: "<<err.message());
     }
 }
 
@@ -471,7 +474,7 @@ void Engine::unregisterConnection(solid::frame::mpipc::ConnectionContext &_rctx,
             ConnectionStub &rcon = room.connections[i];
             if(i != _rcon_data.room_entry_index){
                 rcon.pending_count += 1;
-                _rctx.service().sendMessage(rcon.id, close_msg_ptr, 0|frame::mpipc::MessageFlags::Synchronous);
+                _rctx.service().sendMessage(rcon.id, close_msg_ptr, {frame::mpipc::MessageFlagsE::Synchronous});
             }
         }
     }

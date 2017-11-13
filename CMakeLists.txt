@@ -28,12 +28,35 @@ if(CMAKE_SYSTEM MATCHES "Linux*")
 endif(CMAKE_SYSTEM MATCHES "Linux*")
 
 #-----------------------------------------------------------------
+# External projects build
+#-----------------------------------------------------------------
+include(ExternalProject)
+
+set(snappy_PREFIX ${CMAKE_BINARY_DIR}/external/snappy)
+
+ExternalProject_Add(
+    build_snappy
+    EXCLUDE_FROM_ALL 1
+    PREFIX ${snappy_PREFIX}
+    URL https://github.com/google/snappy/archive/1.1.7.tar.gz
+    CMAKE_ARGS
+            -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_BINARY_DIR}/external -DCMAKE_INSTALL_LIBDIR=lib
+    LOG_UPDATE ON
+    LOG_CONFIGURE ON
+    LOG_BUILD ON
+    LOG_INSTALL ON
+)
+
+set(SNAPPY_LIB ${CMAKE_BINARY_DIR}/external/lib/libsnappy.a)
+
+#-----------------------------------------------------------------
 # Global include directories
 #-----------------------------------------------------------------
 include_directories(
     ${CMAKE_CURRENT_BINARY_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${EXTERN_PATH}/include/
+    ${CMAKE_CURRENT_BINARY_DIR}/external/include
 )
 
 link_directories(

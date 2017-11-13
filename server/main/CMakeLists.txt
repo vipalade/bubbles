@@ -35,7 +35,7 @@ add_custom_target(bubbles_server_certs
 
 add_executable (bubbles_server src/bubbles_server_main.cpp src/bubbles_server_engine.cpp ../../protocol/bubbles_messages.hpp)
 
-add_dependencies(bubbles_server bubbles_server_certs)
+add_dependencies(bubbles_server bubbles_server_certs build_snappy)
 
 target_link_libraries (bubbles_server
     solid_frame_mpipc
@@ -43,7 +43,7 @@ target_link_libraries (bubbles_server
     solid_serialization
     boost_program_options
     boost_system
-    snappy
+    ${SNAPPY_LIB}
     ${SYS_BASIC_LIBS}
     ${SYS_DYNAMIC_LOAD_LIB}
 )

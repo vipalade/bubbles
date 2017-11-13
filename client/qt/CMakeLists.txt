@@ -67,7 +67,7 @@ if(${Qt5Widgets_FOUND})
         boost_program_options
         boost_system
         Qt5::Widgets
-        snappy
+        ${SNAPPY_LIB}
         ${SYS_BASIC_LIBS}
     )
 endif()

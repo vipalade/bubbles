@@ -22,7 +22,7 @@ struct RegisterRequest: solid::frame::mpipc::Message{
     ): room_name(_rroom_name), rgb_color(_rgb_color){}
 
     template <class S>
-    void serialize(S &_s, solid::frame::mpipc::ConnectionContext &_rctx){
+    void solidSerialize(S &_s, solid::frame::mpipc::ConnectionContext &_rctx){
         _s.push(room_name, "room_name").push(rgb_color, "rgb_color");
     }
 };
@@ -47,7 +47,7 @@ struct RegisterResponse: solid::frame::mpipc::Message{
     }
 
     template <class S>
-    void serialize(S &_s, solid::frame::mpipc::ConnectionContext &_rctx){
+    void solidSerialize(S &_s, solid::frame::mpipc::ConnectionContext &_rctx){
         _s.push(error, "error").push(rgb_color, "rgb_color").push(message, "message");
     }
 };
@@ -71,7 +71,7 @@ struct ConnectionId{
     }
 
     template <class S>
-    void serialize(S &_s, solid::frame::mpipc::ConnectionContext &_rctx){
+    void solidSerialize(S &_s, solid::frame::mpipc::ConnectionContext &_rctx){
         _s.push(server_idx, "server_idx").push(server_unq, "server_unq").push(connection_idx, "connection_idx").push(connection_unq, "connection_unq");
     }
 };
@@ -94,7 +94,7 @@ struct Event{
     }
 
     template <class S>
-    void serialize(S &_s, solid::frame::mpipc::ConnectionContext &_rctx){
+    void solidSerialize(S &_s, solid::frame::mpipc::ConnectionContext &_rctx){
         _s.push(diff_time_msec, "diff_time_msec").push(data, "data").push(y, "y").push(x, "x").push(flags, "flags").push(type, "type");
     }
 
@@ -129,7 +129,7 @@ struct EventStub{
     }
 
     template <class S>
-    void serialize(S &_s, solid::frame::mpipc::ConnectionContext &_rctx){
+    void solidSerialize(S &_s, solid::frame::mpipc::ConnectionContext &_rctx){
         _s.pushContainer(events, "events");
         _s.push(text, "text").push(event, "event").push(sender_rgb_color, "sender_rgb_color").push(connection_id, "connection_id");
     }
@@ -156,7 +156,7 @@ struct EventsNotification: solid::frame::mpipc::Message{
     }
 
     template <class S>
-    void serialize(S &_s, solid::frame::mpipc::ConnectionContext &_rctx){
+    void solidSerialize(S &_s, solid::frame::mpipc::ConnectionContext &_rctx){
         _s.pushContainerLimit();//back to default
         _s.pushStringLimit();//back to default
 
@@ -189,7 +189,7 @@ struct EventsNotificationResponse: solid::frame::mpipc::Message{
         success_count(_success_count), fail_count(_fail_count), message(_rmsg){}
 
     template <class S>
-    void serialize(S &_s, solid::frame::mpipc::ConnectionContext &_rctx){
+    void solidSerialize(S &_s, solid::frame::mpipc::ConnectionContext &_rctx){
         _s.push(message, "message").push(fail_count, "fail_count").push(success_count, "success_count").push(error, "error");
     }
 };
