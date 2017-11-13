@@ -18,7 +18,12 @@ set(OPENSSL_ROOT_DIR "${EXTERN_PATH}")
 find_package(OpenSSL)
 
 set(SolidFrame_DIR "${EXTERN_PATH}/lib/cmake/SolidFrame" CACHE PATH "SolidFrame CMake configuration dir")
-find_package(SolidFrame)
+find_package(SolidFrame 3)
+
+if(SolidFrame_FOUND)
+    message("SolidFrame found with version: ${SolidFrame_VERSION}")
+else()
+endif()
 
 if(CMAKE_SYSTEM MATCHES "Linux*")
     message("Detected system ON_LINUX")
