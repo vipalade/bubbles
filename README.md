@@ -70,38 +70,77 @@ $ cd build/debug
 $ cmake -DEXTERN_PATH=~/work/extern ../../
 $ cd server/main
 $ make
+```
+or directly use the SolidFrame build - without installing it
+
+```bash
+$ mkdir ~/work
+$ cd ~/work
+$ git clone git@github.com:vipalade/solidframe.git
+$ mkdir external
+$ cd extern
+$ ../solidframe/prerequisites/prepare_extern.sh
+# ... wait until the prerequisites are built
+$ cd ../solidframe
+$ ./configure -e ~/work/external
+$ cd build/release
+$ make
+# clone bubbles
+$ cd ~/work
+$ git clone https://github.com/vipalade/bubbles.git
+$ cd ~/work/bubbles/
+$ mkdir -p build/release
+$ cd build/release
+$ cmake -DCMAKE_BUILD_TYPE=release -DEXTERN_PATH=~/work/external -DSolidFrame_DIR=~/work/solidframe/build/release ../../
+$ cd server/main
+$ make
+
+```
+
+run the server:
+
+```bash
 # run the server:
 $ ./bubbles_server -p 4444 -s
 ```
 
 __With Qt client__:
 
+First you'll need to download precompiled Qt from [here](http://download.qt.io/official_releases/qt/5.9/5.9.2/qt-opensource-linux-x64-5.9.2.run) like this:
+
 ```bash
-$ mkdir ~/work
-$ cd ~/work
-$ git clone git@github.com:vipalade/solidframe.git
-$ mkdir extern
-$ cd extern
-$ ../solidframe/prerequisites/prepare_extern.sh
-# ... wait until the prerequisites are built
-$ cd ../solidframe
-$ ./configure -e ~/work/extern --prefix ~/work/extern
-$ cd build/release
-$ make install
-# clone bubbles
-$ cd ~/work
-$ git clone https://github.com/vipalade/bubbles.git
-$ cd extern
-$ ../bubbles/prerequisites/prepare_extern.sh --qt
-# wait while Qt gets compiled - will take a while - be carefull to install develop packages needed by Qt
+$ cd ~/work/external
+$ curl -L -O http://download.qt.io/official_releases/qt/5.9/5.9.2/qt-opensource-linux-x64-5.9.2.run
+$ chmod +x qt-opensource-linux-x64-5.9.2.run
+$ ./qt-opensource-linux-x64-5.9.2.run
+# ... follow the installation steps, and install qt in ~/work/external/qt/
+```
+
+Next, you'll have to install Qt dependencies. E.g. on Fedora:
+
+```bash
+$ sudo dnf install mesa-libGL-devel
+```
+
+next, configure the bubbles build to also compile the Qt client:
+
+```bash
 $ cd ~/work/bubbles/
-$ mkdir -p build/debug
-$ cd build/debug
-$ cmake -DEXTERN_PATH=~/work/extern ../../
+$ cd build/release
+# reconfigure with path to QtWidget:
+$ cmake -DCMAKE_BUILD_TYPE=release -DEXTERN_PATH=~/work/external -DSolidFrame_DIR=~/work/solidframe/build/release -DQt5Widgets_DIR=~/work/external/qt/5.9.2/gcc_64/lib/cmake/Qt5Widgets ../../
 $ cd client/qt
 $ make
-# run the client:
-$ ./bubbles_client
+```
+
+run the client:
+
+```bash
+# launch multiple bubbles clients:
+$ ./bubbles_client -c localhost:4444 &
+$ ./bubbles_client -c localhost:4444 &
+$ ./bubbles_client -c localhost:4444 &
+$ ./bubbles_client -c localhost:4444 &
 ```
 
 __With Android client__:

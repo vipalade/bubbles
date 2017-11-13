@@ -191,9 +191,8 @@ int main(int argc, char *argv[]){
             }
         }
 
-        cout<<"Press any char and ENTER to stop: ";
-        char c;
-        cin>>c;
+        cout << "Press ENTER to stop:" << endl;
+        cin.ignore();
         //cout<<"Max dropped message count: "<<engine.maxDroppedMessageCount()<<endl;
         engine.plotStatistics(cout);
     }
