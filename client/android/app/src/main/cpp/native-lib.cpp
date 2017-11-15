@@ -408,6 +408,7 @@ jboolean Java_com_example_vapa_bubbles_BubblesActivity_nativeResume(
         jobject _this){
     LOGI("native: engine started");
     g_ctx.engine_ptr->resume();
+    return JNI_TRUE;
 }
 extern "C"
 jboolean Java_com_example_vapa_bubbles_BubblesActivity_nativeMove(
@@ -416,6 +417,7 @@ jboolean Java_com_example_vapa_bubbles_BubblesActivity_nativeMove(
 
     //LOGI("move %d,%d", (int)_x, (int)_y);
     g_ctx.engine_ptr->moveEvent(_x, _y);
+    return JNI_TRUE;
 }
 
 extern "C"
@@ -425,6 +427,7 @@ jboolean Java_com_example_vapa_bubbles_BubblesActivity_nativeSetFrame(
 
     LOGI("setFrame %d,%d", (int)_w, (int)_h);
     g_ctx.engine_ptr->setFrame(_w, _h);
+    return JNI_TRUE;
 }
 
 namespace{

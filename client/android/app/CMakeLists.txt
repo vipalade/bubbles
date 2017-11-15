@@ -31,6 +31,7 @@ set(CMAKE_ASM_FLAGS_RELEASE   "${ANDROID_COMPILER_FLAGS_RELEASE} ${CMAKE_ASM_FLA
 
 add_subdirectory(src/main/cpp/boringssl)
 add_subdirectory(src/main/cpp/solidframe)
+add_subdirectory(src/main/cpp/client/engine)
 
 message("Android ABI: ${ANDROID_ABI}")
 message("Android API level: ${ANDROID_NATIVE_API_LEVEL}")
@@ -43,27 +44,39 @@ message("Processor: ${CMAKE_SYSTEM_PROCESSOR}")
 #-----------------------------------------------------------------
 include(ExternalProject)
 
-set(snappy_PREFIX ${CMAKE_BINARY_DIR}/external/snappy)
+set(native_snappy_PREFIX ${CMAKE_BINARY_DIR}/external/snappy)
 
 ExternalProject_Add(
-    build_snappy
+    native_build_snappy
     EXCLUDE_FROM_ALL 0
     BUILD_ALWAYS 1
-    PREFIX ${snappy_PREFIX}
+    PREFIX ${native_snappy_PREFIX}
     URL https://github.com/google/snappy/archive/1.1.7.tar.gz
     CMAKE_COMMAND ${CMAKE_COMMAND}
-    CMAKE_GENERATOR "Android Gradle - Unix Makefiles"
+    CMAKE_GENERATOR "Android Gradle - Ninja"
+    CMAKE_GENERATOR_PLATFORM "${CMAKE_GENERATOR_PLATFORM}"
+    CMAKE_GENERATOR_TOOLSET "${CMAKE_GENERATOR_TOOLSET}"
     CMAKE_ARGS
-            -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_BINARY_DIR}/external -DCMAKE_INSTALL_LIBDIR=lib
+            -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_CURRENT_BINARY_DIR}/external -DCMAKE_INSTALL_LIBDIR=lib
+            -DANDROID_ABI=${ANDROID_ABI}
+            -DANDROID_PLATFORM=${ANDROID_PLATFORM}
+            -DANDROID_NDK=${ANDROID_NDK}
+            -DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}
+            -DCMAKE_MAKE_PROGRAM=${CMAKE_MAKE_PROGRAM}
+            -DANDROID_ARM_NEON=${ANDROID_ARM_NEON}
+            -DANDROID_STL=${ANDROID_STL}
+    BUILD_BYPRODUCTS ${CMAKE_CURRENT_BINARY_DIR}/external/lib/libsnappy.a
     LOG_UPDATE ON
     LOG_CONFIGURE ON
     LOG_BUILD ON
     LOG_INSTALL ON
 )
 
-set(SNAPPY_LIB ${CMAKE_BINARY_DIR}/external/lib/libsnappy.a)
+set(NATIVE_SNAPPY_LIB ${CMAKE_CURRENT_BINARY_DIR}/external/lib/libsnappy.a)
 
-add_subdirectory(src/main/cpp/client/engine)
+message("snappy_library: ${NATIVE_SNAPPY_LIB}")
+message("generator platform: ${CMAKE_GENERATOR_PLATFORM}")
+message("generator toolset: ${CMAKE_GENERATOR_TOOLSET}")
 
 include_directories(
     ${CMAKE_CURRENT_BINARY_DIR}/external/include
@@ -86,7 +99,9 @@ add_library( # Sets the name of the library.
              src/main/cpp/native-lib.cpp )
 
 # - do not understand why this dependency is not considered - moved to egine
-#add_dependencies(native-lib build_snappy)
+add_dependencies(native-lib native_build_snappy)
+
+message("snappy_library2: ${NATIVE_SNAPPY_LIB}")
 
 # Searches for a specified prebuilt library and stores the path as a
 # variable. Because system libraries are included in the search path by
@@ -119,6 +134,7 @@ target_link_libraries( # Specifies the target library.
                        solid_serialization
                        solid_utility
                        solid_system
+                       ${NATIVE_SNAPPY_LIB}
                        crypto
                        ssl
 )

@@ -12,10 +12,10 @@ android {
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
         externalNativeBuild {
             cmake {
-                arguments "-DANDROID_ARM_NEON=TRUE", "-DANDROID_STL=c++_static"//, "-DANDROID_TOOLCHAIN=gcc"//need gcc in order for arm64-v8a to work
+                arguments "-DANDROID_ARM_NEON=TRUE", "-DANDROID_STL=c++_shared"//, "-DANDROID_TOOLCHAIN=gcc"//need gcc in order for arm64-v8a to work
                 cppFlags "-std=c++11 -frtti -fexceptions"
                 abiFilters "x86"//, "x86_64"
-                targets "native-lib", "bubbles_client_engine"
+                //targets "native-lib", "bubbles_client_engine"
                 //abiFilters "armeabi-v7a", "x86", "arm64-v8a", "x86_64", "armeabi"
             }
         }

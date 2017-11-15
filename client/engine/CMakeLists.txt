@@ -4,8 +4,8 @@ add_library (bubbles_client_engine
     src/bubbles_client_engine.cpp
 )
 
-add_dependencies(bubbles_client_engine build_snappy)
+target_link_libraries(bubbles_client_engine solid_frame_mpipc)
 
-target_link_libraries(bubbles_client_engine solid_frame_mpipc ${SNAPPY_LIB})
+
 
 
