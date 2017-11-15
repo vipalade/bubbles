@@ -21,6 +21,7 @@
 #include "solid/frame/mpipc/mpipcconfiguration.hpp"
 #include "solid/frame/mpipc/mpipcprotocol_serialization_v1.hpp"
 #include "solid/frame/mpipc/mpipcsocketstub_openssl.hpp"
+#include "solid/frame/mpipc/mpipccompression_snappy.hpp"
 
 #include "client/engine/bubbles_client_engine.hpp"
 #include "protocol/bubbles_messages.hpp"
@@ -219,7 +220,7 @@ JNIEXPORT void JNICALL JNI_OnUnload(JavaVM* vm, void* reserved) {
 extern "C"
 jboolean Java_com_example_vapa_bubbles_BubblesActivity_nativeStart(
         JNIEnv *env,
-        jobject _this, jstring _endpoint, jstring _room, jboolean _secure, jboolean _auto_pilot,
+        jobject _this, jstring _endpoint, jstring _room, jboolean _secure, jboolean _compressed, jboolean _auto_pilot,
         jstring _verify_authority, jstring _client_cert, jstring _client_key
 ){
     LOGI("native start");
@@ -359,6 +360,11 @@ jboolean Java_com_example_vapa_bubbles_BubblesActivity_nativeStart(
             );
         }
 
+        if(_compressed == JNI_TRUE){
+            //configure Snappy compression:
+            frame::mpipc::snappy::setup(cfg);
+        }
+
         err = g_ctx.ipcsvc.reconfigure(std::move(cfg));
 
         if(err){
@@ -393,6 +399,7 @@ jboolean Java_com_example_vapa_bubbles_BubblesActivity_nativePause(
 
     LOGI("native: engine stoped");
     g_ctx.engine_ptr->pause();
+    return JNI_TRUE;
 }
 
 extern "C"

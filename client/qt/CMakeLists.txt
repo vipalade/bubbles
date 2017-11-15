@@ -56,7 +56,7 @@ if(${Qt5Widgets_FOUND})
         ${src_basic_gui}
     )
 
-    add_dependencies(bubbles_client bubbles_client_certs build_snappy)
+    add_dependencies(bubbles_client bubbles_client_certs)
 
     target_link_libraries(
         bubbles_client
@@ -67,7 +67,6 @@ if(${Qt5Widgets_FOUND})
         boost_program_options
         boost_system
         Qt5::Widgets
-        ${SNAPPY_LIB}
         ${SYS_BASIC_LIBS}
     )
 endif()

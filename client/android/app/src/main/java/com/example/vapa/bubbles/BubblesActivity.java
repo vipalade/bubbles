@@ -28,10 +28,12 @@ public class BubblesActivity extends AppCompatActivity {
         Intent intent = getIntent();
         String endpoint_str = intent.getStringExtra(MainActivity.EXTRA_MESSAGE);
         String secure_str = intent.getStringExtra(MainActivity.EXTRA_SECURE);
+        String compress_str = intent.getStringExtra(MainActivity.EXTRA_COMPRESS);
         String auto_str = intent.getStringExtra(MainActivity.EXTRA_AUTO);
         String room_str = intent.getStringExtra(MainActivity.EXTRA_ROOM);
 
-        boolean secure = secure_str.matches("secure");
+        boolean secure = secure_str.matches("yes");
+        boolean compress = compress_str.matches("yes");
         boolean auto_pilot = auto_str.matches("auto");
 
         String authority_verify_str = loadAssetFile("certs/bubbles-ca-cert.pem");
@@ -45,7 +47,7 @@ public class BubblesActivity extends AppCompatActivity {
         bubblesView.setActivity(this);
 
 
-        if(nativeStart(endpoint_str, room_str, secure, auto_pilot, authority_verify_str, client_cert_str, client_key_str)){
+        if(nativeStart(endpoint_str, room_str, secure, compress, auto_pilot, authority_verify_str, client_cert_str, client_key_str)){
             Log.i("BubblesActivity", "Success starting native engine");
         }else{
             Log.e("BubblesActivity", "Error starting native engine");
@@ -111,7 +113,7 @@ public class BubblesActivity extends AppCompatActivity {
 
     public native boolean nativeStart(
             String _endpoint, String _room,
-            boolean _secure, boolean _auto_pilot,
+            boolean _secure, boolean _compressed, boolean _auto_pilot,
             String _verify_authority, String _client_cert, String _client_key
     );
 

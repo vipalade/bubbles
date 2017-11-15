@@ -31,12 +31,43 @@ set(CMAKE_ASM_FLAGS_RELEASE   "${ANDROID_COMPILER_FLAGS_RELEASE} ${CMAKE_ASM_FLA
 
 add_subdirectory(src/main/cpp/boringssl)
 add_subdirectory(src/main/cpp/solidframe)
-add_subdirectory(src/main/cpp/client/engine)
 
 message("Android ABI: ${ANDROID_ABI}")
 message("Android API level: ${ANDROID_NATIVE_API_LEVEL}")
 message("Toolchain: ${CMAKE_TOOLCHAIN_FILE}")
 message("Processor: ${CMAKE_SYSTEM_PROCESSOR}")
+
+
+#-----------------------------------------------------------------
+# External projects build
+#-----------------------------------------------------------------
+include(ExternalProject)
+
+set(snappy_PREFIX ${CMAKE_BINARY_DIR}/external/snappy)
+
+ExternalProject_Add(
+    build_snappy
+    EXCLUDE_FROM_ALL 0
+    BUILD_ALWAYS 1
+    PREFIX ${snappy_PREFIX}
+    URL https://github.com/google/snappy/archive/1.1.7.tar.gz
+    CMAKE_COMMAND ${CMAKE_COMMAND}
+    CMAKE_GENERATOR "Android Gradle - Unix Makefiles"
+    CMAKE_ARGS
+            -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_BINARY_DIR}/external -DCMAKE_INSTALL_LIBDIR=lib
+    LOG_UPDATE ON
+    LOG_CONFIGURE ON
+    LOG_BUILD ON
+    LOG_INSTALL ON
+)
+
+set(SNAPPY_LIB ${CMAKE_BINARY_DIR}/external/lib/libsnappy.a)
+
+add_subdirectory(src/main/cpp/client/engine)
+
+include_directories(
+    ${CMAKE_CURRENT_BINARY_DIR}/external/include
+)
 
 # Creates and names a library, sets it as either STATIC
 # or SHARED, and provides the relative paths to its source code.
@@ -47,12 +78,15 @@ add_library( # Sets the name of the library.
              native-lib
 
              # Sets the library as a shared library.
-             SHARED
+             MODULE
 
              # Provides a relative path to your source file(s).
              # Associated headers in the same location as their source
              # file are automatically included.
              src/main/cpp/native-lib.cpp )
+
+# - do not understand why this dependency is not considered - moved to egine
+#add_dependencies(native-lib build_snappy)
 
 # Searches for a specified prebuilt library and stores the path as a
 # variable. Because system libraries are included in the search path by
