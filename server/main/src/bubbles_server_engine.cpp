@@ -274,7 +274,7 @@ void Engine::onMessage(
 
                 if(i != rcon_data.room_entry_index and rcon.canAcceptEventsNotification(d.config, *_rrecv_msg_ptr, rcon_data.room_entry_index)){
                     rcon.pending_count += (1 + _rrecv_msg_ptr->event_stub.events.size());
-                    _rrecv_msg_ptr->clearStateFlags();
+                    _rrecv_msg_ptr->clearHeader(); // cumbersome - for now!
                     _rctx.service().sendMessage(rcon.id, _rrecv_msg_ptr, {frame::mpipc::MessageFlagsE::Synchronous});
                 }else if(i != rcon_data.room_entry_index){
                     idbg(_rctx.recipientId()<<" not sent to "<<i<<" pending count = "<<rcon.pending_count);
