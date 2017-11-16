@@ -1,4 +1,4 @@
-# bubbles: sample client-server using SolidFrame
+# bubbles - sample client-server application using SolidFrame
 
 Exemplifies how to use SolidFrame mpipc library in a secured (SSL) client-server scenario.
 
@@ -7,7 +7,7 @@ Exemplifies how to use SolidFrame mpipc library in a secured (SSL) client-server
 ## Insight
 
 __bubbles__ is a client-server application. It consists of:
- * a server running on Linux
+ * a server (runs on Linux/macOS/FreeBSD)
  * a client running on
    * Linux using Qt for GUI
    * macOS using Qt for GUI
@@ -16,7 +16,7 @@ __bubbles__ is a client-server application. It consists of:
 ### The client
 
 The client displays multiple moving bubbles:
- * one bigger bubble - the personal one which can be moved by the user (via mouse or touch) and/or automatically by a bubble auto pilot.
+ * one bigger bubble - the personal one which can be moved by the user (via mouse or touch) and/or automatically by a bubble "auto pilot".
  * other smaller bubbles, one for every other client registered on the same room on the server.
 
 So, every client will display in real time all the bubbles in a room at the position in the client they originate.
@@ -175,7 +175,7 @@ Launching the clients without any parameters will try to connect to a default in
 $ git clone --recursive https://github.com/vipalade/bubbles.git
 ```
 
- * load bubbles/client/android project in Android Studio >3.0 (tested on macOS and Linux)
+ * load bubbles/client/android project in Android Studio >= 3.0 (tested on macOS and Linux)
  * run the application from there either within emulator or on phisical device.
  
 #### NOTES
