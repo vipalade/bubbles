@@ -9,7 +9,8 @@ Exemplifies how to use SolidFrame mpipc library in a secured (SSL) client-server
 __bubbles__ is a client-server application. It consists of:
  * a server running on Linux
  * a client running on
-   * Linux (macOS and FreeBSD should also work - not tested) using Qt for GUI
+   * Linux using Qt for GUI
+   * macOS using Qt for GUI
    * Android using Java Native Interface
 
 ### The client
@@ -22,7 +23,10 @@ So, every client will display in real time all the bubbles in a room at the posi
 
 #### Implementation
 The frontend is implemented using either Qt (for desktop clients) or Java for Android application.
-The backend engine is implemented in C++ and relies on solid_frame libraries (especially on solid_frame_mpipc for communication) and on OpenSSL (on desktop)/BoringSSL (on Android) to secure the communication.
+The backend engine is implemented in C++ and relies on
+ * **solid_frame** libraries (especially **solid_frame_mpipc** for communication)
+ * **OpenSSL** (for desktop) / **BoringSSL** (for Android) - to secure the communication
+ * **snappy** for both desktop and Android versions - to compress communication
 
 
 ### The server
@@ -34,7 +38,7 @@ The backend engine is implemented in C++ and relies on solid_frame libraries (es
 
 #### Implementation
 
-The server is a C++ application using solid_frame libraries (most important solid_frame_mpipc for communication), OpenSSL to secure communication and boost for parsing command line parameters.
+The server is a C++ application using **solid_frame** libraries (most important **solid_frame_mpipc** for communication), **OpenSSL** to secure communication and **boost** for parsing command line parameters.
 
 ### Workflow
  * the client connects to the server and registers on a room using either a given color or requesting a new color
@@ -171,6 +175,14 @@ Launching the clients without any parameters will try to connect to a default in
 $ git clone --recursive https://github.com/vipalade/bubbles.git
 ```
 
- * load bubbles/client/android project in Android Studio >2.2
+ * load bubbles/client/android project in Android Studio >3.0 (tested on macOS and Linux)
  * run the application from there either within emulator or on phisical device.
+ 
+#### NOTES
+
+ * **BoringSSL** and **solid_frame** libraries are used as git modules (i.e. the CMakeLists.txt of the native lib (client/android/app/CMakeLists.txt) directly embeds the CMakeList.txt files of BoringSSL and solidframe.
+ * **snappy** on the other hand is used as an external project (using ExternalProject_Add).
+ * Although all libraries can be built as external projects, I'll maintain this status quo as an example of how to use git modules.
+ * _Lesson learned_: For the ExternalProject_Add with **snappy** to work propperly (i.e. the native-lib to be able to link with libsnappy.a), I had to add "BUILD_BYPRODUCTS ${CMAKE_CURRENT_BINARY_DIR}/external/lib/libsnappy.a" field to ExternalProject_Add.
+ 
 
