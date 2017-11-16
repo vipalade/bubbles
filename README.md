@@ -24,9 +24,9 @@ So, every client will display in real time all the bubbles in a room at the posi
 ||
 |:---|
 |__Linux:__|
-|![Screenshot Linux](bubbles_qt_linux.png)|
+|![Screenshot Linux](bubbles_linux.png)|
 |__macOS:__|
-|![Screenshot Linux](bubbles_qt_linux.png)|
+|![Screenshot Linux](bubbles_macos.png)|
 
 #### Implementation
 The frontend is implemented using either Qt (for desktop clients) or Java for Android application.
