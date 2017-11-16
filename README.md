@@ -15,19 +15,18 @@ __bubbles__ is a client-server application. It consists of:
 
 ### The client
 
-||
-|:---|
-|__Linux__|
-|![Screenshot Linux](bubbles_qt_linux.png)|
-|__macOS__|
-|![Screenshot Linux](bubbles_qt_linux.png)|
-
-
 The client displays multiple moving bubbles:
  * one bigger bubble - the personal one which can be moved by the user (via mouse or touch) and/or automatically by a bubble "auto pilot".
  * other smaller bubbles, one for every other client registered on the same room on the server.
 
 So, every client will display in real time all the bubbles in a room at the position in the client they originate.
+
+||
+|:---|
+|__Linux:__|
+|![Screenshot Linux](bubbles_qt_linux.png)|
+|__macOS:__|
+|![Screenshot Linux](bubbles_qt_linux.png)|
 
 #### Implementation
 The frontend is implemented using either Qt (for desktop clients) or Java for Android application.
