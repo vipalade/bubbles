@@ -74,10 +74,6 @@ ExternalProject_Add(
 
 set(NATIVE_SNAPPY_LIB ${CMAKE_CURRENT_BINARY_DIR}/external/lib/libsnappy.a)
 
-message("snappy_library: ${NATIVE_SNAPPY_LIB}")
-message("generator platform: ${CMAKE_GENERATOR_PLATFORM}")
-message("generator toolset: ${CMAKE_GENERATOR_TOOLSET}")
-
 include_directories(
     ${CMAKE_CURRENT_BINARY_DIR}/external/include
 )
@@ -101,8 +97,6 @@ add_library( # Sets the name of the library.
 # - do not understand why this dependency is not considered - moved to egine
 add_dependencies(native-lib native_build_snappy)
 
-message("snappy_library2: ${NATIVE_SNAPPY_LIB}")
-
 # Searches for a specified prebuilt library and stores the path as a
 # variable. Because system libraries are included in the search path by
 # default, you only need to specify the name of the public NDK library
@@ -121,20 +115,20 @@ find_library( # Sets the name of the path variable.
 # build script, prebuilt third-party libraries, or system libraries.
 
 target_link_libraries( # Specifies the target library.
-                       native-lib
+                native-lib
 
-                       # Links the target library to the log library
-                       # included in the NDK.
-                       ${log-lib}
-                       bubbles_client_engine
-                       solid_frame_mpipc
-                       solid_frame_aio
-                       solid_frame_aio_openssl
-                       solid_frame
-                       solid_serialization
-                       solid_utility
-                       solid_system
-                       ${NATIVE_SNAPPY_LIB}
-                       crypto
-                       ssl
+                # Links the target library to the log library
+                # included in the NDK.
+                ${log-lib}
+                bubbles_client_engine
+                solid_frame_mpipc
+                solid_frame_aio
+                solid_frame_aio_openssl
+                solid_frame
+                solid_serialization
+                solid_utility
+                solid_system
+                ${NATIVE_SNAPPY_LIB}
+                crypto
+                ssl
 )
