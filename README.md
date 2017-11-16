@@ -47,19 +47,22 @@ The server is a C++ application using solid_frame libraries (most important soli
 
 ## Getting started
 
-__With the server__:
+### With the server
+
+SolidFrame can be use either installed:
 
 ```bash
 $ mkdir ~/work
 $ cd ~/work
 $ git clone git@github.com:vipalade/solidframe.git
 $ mkdir extern
-$ cd extern
+$ cd external
 $ ../solidframe/prerequisites/prepare_extern.sh
 # ... wait until the prerequisites are built
 $ cd ../solidframe
-$ ./configure -e ~/work/extern --prefix ~/work/extern
+$ ./configure -e ~/work/external --prefix ~/work/external
 $ cd build/release
+# makes and installs solidframe in ~/work/external
 $ make install
 # clone bubbles
 $ cd ~/work
@@ -67,49 +70,107 @@ $ git clone https://github.com/vipalade/bubbles.git
 $ cd ~/work/bubbles/
 $ mkdir -p build/debug
 $ cd build/debug
-$ cmake -DEXTERN_PATH=~/work/extern ../../
+# only use the external folder
+$ cmake -DEXTERN_PATH=~/work/external ../../
 $ cd server/main
 $ make
-# run the server:
-$ ./bubbles_server -p 4444 -s
 ```
-
-__With Qt client__:
+or it can be used directly from the directory it was built:
 
 ```bash
 $ mkdir ~/work
 $ cd ~/work
 $ git clone git@github.com:vipalade/solidframe.git
-$ mkdir extern
-$ cd extern
+$ mkdir external
+$ cd external
 $ ../solidframe/prerequisites/prepare_extern.sh
 # ... wait until the prerequisites are built
 $ cd ../solidframe
-$ ./configure -e ~/work/extern --prefix ~/work/extern
+$ ./configure -e ~/work/external
 $ cd build/release
-$ make install
+$ make
 # clone bubbles
 $ cd ~/work
 $ git clone https://github.com/vipalade/bubbles.git
-$ cd extern
-$ ../bubbles/prerequisites/prepare_extern.sh --qt
-# wait while Qt gets compiled - will take a while - be carefull to install develop packages needed by Qt
 $ cd ~/work/bubbles/
-$ mkdir -p build/debug
-$ cd build/debug
-$ cmake -DEXTERN_PATH=~/work/extern ../../
-$ cd client/qt
+$ mkdir -p build/release
+$ cd build/release
+$ cmake -DCMAKE_BUILD_TYPE=release -DEXTERN_PATH=~/work/external -DSolidFrame_DIR=~/work/solidframe/build/release ../../
+$ cd server/main
 $ make
-# run the client:
-$ ./bubbles_client
+
 ```
 
-__With Android client__:
+run the server with secure communication enabled:
+
+```bash
+$ ./bubbles_server -p 4444
+```
+
+or, run the server with plain communication:
+
+```bash
+$ ./bubbles_server -p 4444 -s 0
+```
+
+
+### With Qt client
+
+First you'll need to download precompiled Qt from [here](http://download.qt.io/official_releases/qt/5.9/5.9.2/qt-opensource-linux-x64-5.9.2.run):
+
+```bash
+$ cd ~/work/external
+$ curl -L -O http://download.qt.io/official_releases/qt/5.9/5.9.2/qt-opensource-linux-x64-5.9.2.run
+$ chmod +x qt-opensource-linux-x64-5.9.2.run
+$ ./qt-opensource-linux-x64-5.9.2.run
+# ... follow the installation steps, and install qt (only "Desktop gcc 64-bit" is needed) in ~/work/external/qt/
+```
+
+Next, you'll have to install Qt dependencies. E.g. on Fedora:
+
+```bash
+$ sudo dnf install mesa-libGL-devel
+```
+
+next, configure the **bubbles** build to also compile the Qt client:
+
+```bash
+$ cd ~/work/bubbles/
+$ cd build/release
+# reconfigure with path to QtWidget:
+$ cmake -DCMAKE_BUILD_TYPE=release -DEXTERN_PATH=~/work/external -DSolidFrame_DIR=~/work/solidframe/build/release -DQt5Widgets_DIR=~/work/external/qt/5.9.2/gcc_64/lib/cmake/Qt5Widgets ../../
+$ cd client/qt
+$ make
+```
+
+run the client with secure communication:
+
+```bash
+# launch multiple bubbles clients:
+$ ./bubbles_client -c localhost:4444 &
+$ ./bubbles_client -c localhost:4444 &
+$ ./bubbles_client -c localhost:4444 &
+$ ./bubbles_client -c localhost:4444 &
+```
+or, run the client with plain communication:
+
+```bash
+# launch multiple bubbles clients:
+$ ./bubbles_client -c localhost:4444 -s 0 &
+$ ./bubbles_client -c localhost:4444 -s 0 &
+$ ./bubbles_client -c localhost:4444 -s 0 &
+$ ./bubbles_client -c localhost:4444 -s 0 &
+```
+
+Launching the clients without any parameters will try to connect to a default internet server (not always online!).
+
+
+### With Android client
 
 ```bash
 $ git clone --recursive https://github.com/vipalade/bubbles.git
 ```
 
  * load bubbles/client/android project in Android Studio >2.2
- * run the application from there on either emulator or a phisical device.
+ * run the application from there either within emulator or on phisical device.
 

@@ -21,6 +21,7 @@
 #include "solid/frame/mpipc/mpipcconfiguration.hpp"
 #include "solid/frame/mpipc/mpipcprotocol_serialization_v1.hpp"
 #include "solid/frame/mpipc/mpipcsocketstub_openssl.hpp"
+#include "solid/frame/mpipc/mpipccompression_snappy.hpp"
 
 #include "client/engine/bubbles_client_engine.hpp"
 #include "protocol/bubbles_messages.hpp"
@@ -38,9 +39,9 @@ static const char* kTAG = "bubbles-native";
   ((void)__android_log_print(ANDROID_LOG_ERROR, kTAG, __VA_ARGS__))
 
 namespace {
-    typedef frame::Scheduler<frame::aio::Reactor>	AioSchedulerT;
+    typedef frame::Scheduler<frame::aio::Reactor>   AioSchedulerT;
     typedef frame::Scheduler<frame::Reactor>        SchedulerT;
-    typedef frame::aio::openssl::Context			SecureContextT;
+    typedef frame::aio::openssl::Context            SecureContextT;
     using BubblesEnginePointerT = bubbles::client::Engine::PointerT;
     using PlotIteratorT = bubbles::client::PlotIterator;
     struct Context {
@@ -58,15 +59,15 @@ namespace {
         std::string             endpoint;
         std::string             room_name;
 
-        AioSchedulerT			aio_sch;
+        AioSchedulerT           aio_sch;
         SchedulerT              sch;
 
 
-        frame::Manager			m;
-        frame::mpipc::ServiceT	ipcsvc;
+        frame::Manager          m;
+        frame::mpipc::ServiceT  ipcsvc;
         frame::ServiceT         svc;
-        frame::aio::Resolver	resolver;
-        BubblesEnginePointerT	engine_ptr;
+        frame::aio::Resolver    resolver;
+        BubblesEnginePointerT   engine_ptr;
         PlotIteratorT           plotit;
     }g_ctx;
 
@@ -219,7 +220,7 @@ JNIEXPORT void JNICALL JNI_OnUnload(JavaVM* vm, void* reserved) {
 extern "C"
 jboolean Java_com_example_vapa_bubbles_BubblesActivity_nativeStart(
         JNIEnv *env,
-        jobject _this, jstring _endpoint, jstring _room, jboolean _secure, jboolean _auto_pilot,
+        jobject _this, jstring _endpoint, jstring _room, jboolean _secure, jboolean _compressed, jboolean _auto_pilot,
         jstring _verify_authority, jstring _client_cert, jstring _client_key
 ){
     LOGI("native start");
@@ -269,7 +270,7 @@ jboolean Java_com_example_vapa_bubbles_BubblesActivity_nativeStart(
 
     g_ctx.engine_ptr = bubbles::client::Engine::create(g_ctx.svc, g_ctx.ipcsvc, bubbles::client::EngineConfiguration{});
 
-    ErrorConditionT			err;
+    ErrorConditionT         err;
     auto thr_enter = []() {
 
         JavaVM *javaVM = g_ctx.vm;
@@ -323,8 +324,8 @@ jboolean Java_com_example_vapa_bubbles_BubblesActivity_nativeStart(
     }
 
     {
-        auto 						proto = frame::mpipc::serialization_v1::Protocol::create(serialization::binary::Limits(256, 128, 0));//small limits by default
-        frame::mpipc::Configuration	cfg(g_ctx.aio_sch, proto);
+        auto                        proto = frame::mpipc::serialization_v1::Protocol::create(serialization::binary::Limits(256, 128, 0));//small limits by default
+        frame::mpipc::Configuration cfg(g_ctx.aio_sch, proto);
 
         bubbles::ProtoSpecT::setup<bubbles::client::MessageSetup>(*proto, 0, std::ref(*g_ctx.engine_ptr));
 
@@ -357,6 +358,11 @@ jboolean Java_com_example_vapa_bubbles_BubblesActivity_nativeStart(
                 },
                 frame::mpipc::openssl::NameCheckSecureStart{"bubbles-server"}
             );
+        }
+
+        if(_compressed == JNI_TRUE){
+            //configure Snappy compression:
+            frame::mpipc::snappy::setup(cfg);
         }
 
         err = g_ctx.ipcsvc.reconfigure(std::move(cfg));
@@ -393,6 +399,7 @@ jboolean Java_com_example_vapa_bubbles_BubblesActivity_nativePause(
 
     LOGI("native: engine stoped");
     g_ctx.engine_ptr->pause();
+    return JNI_TRUE;
 }
 
 extern "C"
@@ -401,6 +408,7 @@ jboolean Java_com_example_vapa_bubbles_BubblesActivity_nativeResume(
         jobject _this){
     LOGI("native: engine started");
     g_ctx.engine_ptr->resume();
+    return JNI_TRUE;
 }
 extern "C"
 jboolean Java_com_example_vapa_bubbles_BubblesActivity_nativeMove(
@@ -409,6 +417,7 @@ jboolean Java_com_example_vapa_bubbles_BubblesActivity_nativeMove(
 
     //LOGI("move %d,%d", (int)_x, (int)_y);
     g_ctx.engine_ptr->moveEvent(_x, _y);
+    return JNI_TRUE;
 }
 
 extern "C"
@@ -418,6 +427,7 @@ jboolean Java_com_example_vapa_bubbles_BubblesActivity_nativeSetFrame(
 
     LOGI("setFrame %d,%d", (int)_w, (int)_h);
     g_ctx.engine_ptr->setFrame(_w, _h);
+    return JNI_TRUE;
 }
 
 namespace{

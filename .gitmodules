@@ -5,3 +5,4 @@
 [submodule "client/android/app/src/main/cpp/boringssl"]
 	path = client/android/app/src/main/cpp/boringssl
 	url = https://boringssl.googlesource.com/boringssl
+	branch = master

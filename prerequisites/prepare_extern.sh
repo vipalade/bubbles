@@ -24,7 +24,8 @@ printUsage()
 	echo
 }
 
-QT_ADDR="http://download.qt.io/official_releases/qt/5.7/5.7.0/single/qt-everywhere-opensource-src-5.7.0.tar.gz"
+QT_ADDR="http://download.qt.io/official_releases/qt/5.9/5.9.2/single/qt-everywhere-opensource-src-5.9.2.tar.xz"
+
 
 SYSTEM=
 
@@ -41,13 +42,13 @@ downloadArchive()
 extractTarBz2()
 {
 #    bzip2 -dc "$1" | tar -xf -
-	tar -xjf "$1"
+	tar -xf "$1"
 }
 
 extractTarGz()
 {
 #    gzip -dc "$1" | tar -xf -
-	tar -xzf "$1"
+	tar -xf "$1"
 }
 
 
@@ -73,13 +74,13 @@ buildQt()
 	echo "Prepare the $WHAT archive..."
 	echo
 
-	ARCH_NAME=`find . -name "$WHAT-*.tar.gz" | grep -v "old/"`
+	ARCH_NAME=`find . -name "$WHAT-*.tar.xz" | grep -v "old/"`
 	if [ -z "$ARCH_NAME" -o -n "$DOWNLOAD" ] ; then
 		mkdir old
 		mv $ARCH_NAME old/
 		echo "No $WHAT archive found or forced - try download: $ADDR_NAME"
 		downloadArchive $ADDR_NAME
-		ARCH_NAME=`find . -name "$WHAT-*.tar.gz" | grep -v "old/"`
+		ARCH_NAME=`find . -name "$WHAT-*.tar.xz" | grep -v "old/"`
 	fi
 	
 	echo "Extracting $WHAT [$ARCH_NAME]..."
@@ -93,7 +94,7 @@ buildQt()
 	cd $DIR_NAME
 	export CXXFLAGS="-I$EXT_DIR/include -L$EXT_DIR/lib"
 	#./configure  -prefix "${EXT_DIR}" -opensource -confirm-license -verbose -static -release -qt-libpng -qt-xcb -nomake examples -no-compile-examples -c++std c++11 -opensource -confirm-license 
-	./configure -prefix "${EXT_DIR}" -opensource -confirm-license -verbose -release -qt-libpng -no-openssl -no-sql-db2 -no-sql-ibase -no-sql-mysql -no-sql-oci -no-sql-odbc -no-sql-psql -no-sql-tds -no-opengl -no-cups -no-libudev -no-libproxy -no-pulseaudio -no-alsa -nomake examples -no-compile-examples  -skip qtandroidextras -skip qtconnectivity -skip qtlocation -skip qtserialport -skip qtwebengine -skip qtwinextras -skip qtgraphicaleffects -skip qtquickcontrols -qt-xcb -skip qtsensors -skip qtsvg -skip qtwayland -skip qtactiveqt -skip qtcanvas3d -skip qtmultimedia -skip qtquickcontrols2 -skip qtserialbus -skip qtwebview -skip qtxmlpatterns -c++std c++11 -opensource -confirm-license
+	./configure -prefix "${EXT_DIR}" -opensource -confirm-license -verbose -release -qt-libpng -no-openssl -no-sql-db2 -no-sql-ibase -no-sql-mysql -no-sql-oci -no-sql-odbc -no-sql-psql -no-sql-tds -no-opengl -no-cups -no-libudev -no-libproxy -nomake examples -no-compile-examples  -skip qtandroidextras -skip qtconnectivity -skip qtlocation -skip qtserialport -skip qtwebengine -skip qtwinextras -skip qtgraphicaleffects -skip qtquickcontrols -qt-xcb -skip qtsensors -skip qtsvg -skip qtwayland -skip qtactiveqt -skip qtcanvas3d -skip qtmultimedia -skip qtquickcontrols2 -skip qtserialbus -skip qtwebview -skip qtxmlpatterns -c++std c++11 -opensource -confirm-license
 	
 	#./configure -prefix "${EXT_DIR}" -opensource -confirm-license -verbose -static -release -nomake examples -no-compile-examples -qt-xcb -c++std c++11 -skip qtquickcontrols -skip qtquickcontrols2
 	
