@@ -15,7 +15,13 @@ __bubbles__ is a client-server application. It consists of:
 
 ### The client
 
-![Screenshot Linux](bubbles_qt_linux.png)
+||
+|:---|
+|__Linux__|
+|![Screenshot Linux](bubbles_qt_linux.png)|
+|__macOS__|
+|![Screenshot Linux](bubbles_qt_linux.png)|
+
 
 The client displays multiple moving bubbles:
  * one bigger bubble - the personal one which can be moved by the user (via mouse or touch) and/or automatically by a bubble "auto pilot".
