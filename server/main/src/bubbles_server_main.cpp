@@ -14,6 +14,7 @@
 
 #include "bubbles_server_engine.hpp"
 
+#include <signal.h>
 
 #include "boost/program_options.hpp"
 
@@ -86,7 +87,9 @@ int main(int argc, char *argv[]){
     Parameters p;
 
     if(parseArguments(p, argc, argv)) return 0;
-
+    
+    signal(SIGPIPE, SIG_IGN);
+    
 #ifdef SOLID_HAS_DEBUG
     {
     string dbgout;
@@ -142,6 +145,8 @@ int main(int argc, char *argv[]){
             frame::mpipc::Configuration cfg(scheduler, proto);
 
             bubbles::ProtoSpecT::setup<bubbles::server::MessageSetup>(*proto, 0, std::ref(engine));
+            
+            cfg.connection_inactivity_timeout_seconds = 60;
 
             cfg.server.listener_address_str = p.listener_addr;
             cfg.server.listener_address_str += ':';

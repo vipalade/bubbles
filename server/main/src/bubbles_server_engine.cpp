@@ -451,6 +451,7 @@ uint32_t Engine::registerConnection(
 }
 
 void Engine::unregisterConnection(solid::frame::mpipc::ConnectionContext &_rctx, ConnectionData &_rcon_data){
+    wdbg(" room: "<<_rcon_data.room_index<<" connection: "<<_rcon_data.room_entry_index);
     RoomStub    &room = d.rooms[_rcon_data.room_index];
     {
         const size_t        dropped_msg_count = room.connections[_rcon_data.room_entry_index].dropped_message_count;
@@ -489,6 +490,7 @@ void Engine::unregisterConnection(solid::frame::mpipc::ConnectionContext &_rctx,
 
         room.clear();
         d.free_stack.push(_rcon_data.room_index);
+        wdbg(" room: "<<_rcon_data.room_index<<" is empty");
     }
 
     _rcon_data.room_index = -1;

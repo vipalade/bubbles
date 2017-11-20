@@ -509,11 +509,12 @@ void Engine::doProcessIncomingNotifications(solid::frame::ReactorContext &_rctx)
 }
 
 void Engine::doTrySendEvents(std::shared_ptr<EventsNotification> &&_rrecv_msg_ptr /*= std::shared_ptr<EventsNotification>{}*/){
-    idbg("");
+    idbg(""<< _rrecv_msg_ptr);
     size_t      pop_eventq_idx = 0;
     {
         std::unique_lock<std::mutex> lock(d.mtx);
         if(_rrecv_msg_ptr){
+            idbg(""<< d.events_message_ptr);
             d.events_message_ptr = std::move(_rrecv_msg_ptr);
         }
         if(d.events_message_ptr and not d.paused){
@@ -538,7 +539,7 @@ void Engine::doTrySendEvents(std::shared_ptr<EventsNotification> &&_rrecv_msg_pt
             pop_eventq_idx = -1;
         }
     }
-    if(pop_eventq_idx < 2){
+    if(pop_eventq_idx < 2 and d.events_message_ptr){
         //we can fill events_message_ptr and send it to server
         EventQueueT &reventq = d.eventq[pop_eventq_idx];
 
@@ -553,7 +554,10 @@ void Engine::doTrySendEvents(std::shared_ptr<EventsNotification> &&_rrecv_msg_pt
         }
 
         std::shared_ptr<EventsNotification> tmp_ptr{std::move(d.events_message_ptr)};
-        d.rmpipc.sendMessage(d.server_endpoint.c_str(), tmp_ptr);
+        solid::ErrorConditionT  err = d.rmpipc.sendMessage(d.server_endpoint.c_str(), tmp_ptr);
+        if(err){
+            edbg(""<< " sendMessage error: "<<err.message());
+        }
     }
 }
 
@@ -571,14 +575,17 @@ void Engine::onConnectionStart(solid::frame::mpipc::ConnectionContext &_rctx){
 }
 
 void Engine::onConnectionStop(solid::frame::mpipc::ConnectionContext &_rctx){
-    idbg(_rctx.recipientId()<<' '<<_rctx.error().message());
+    idbg(_rctx.recipientId()<<' '<<_rctx.error().message()<<' '<<d.events_message_ptr);
 
     if(d.events_message_ptr and not d.paused){
         //connection stopped and there is no activity to send, resend the last event
         d.events_message_ptr->event_stub.event = d.last_event;
 
         std::shared_ptr<EventsNotification> tmp_ptr{std::move(d.events_message_ptr)};
-        d.rmpipc.sendMessage(d.server_endpoint.c_str(), tmp_ptr);
+        solid::ErrorConditionT  err = d.rmpipc.sendMessage(d.server_endpoint.c_str(), tmp_ptr);
+        if(err){
+            edbg(""<< " sendMessage error: "<<err.message());
+        }
     }
 }
 

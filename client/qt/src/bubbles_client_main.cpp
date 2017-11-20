@@ -24,6 +24,8 @@
 
 #include "boost/program_options.hpp"
 
+#include <signal.h>
+
 #include <iostream>
 
 using namespace solid;
@@ -186,9 +188,11 @@ bool parseArguments(Parameters &_par, int argc, char *argv[]);
 
 int main(int argc, char *argv[]){
     Parameters p;
-
+    
     if(parseArguments(p, argc, argv)) return 0;
-
+    
+    signal(SIGPIPE, SIG_IGN);
+    
 #ifdef SOLID_HAS_DEBUG
     {
     string dbgout;
@@ -271,6 +275,8 @@ int main(int argc, char *argv[]){
         cfg.client.name_resolve_fnc = frame::mpipc::InternetResolverF(resolver, p.connect_port.c_str());
 
         cfg.client.connection_start_state = frame::mpipc::ConnectionState::Passive;
+        
+        cfg.connection_keepalive_timeout_seconds = 30;
 
         {
             auto connection_stop_lambda = [engine_ptr](frame::mpipc::ConnectionContext &_ctx){
