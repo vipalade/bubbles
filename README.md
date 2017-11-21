@@ -25,7 +25,7 @@ So, every client will display in real time all the bubbles in a room at the posi
 |:---|
 |__Linux:__|
 |![Screenshot Linux](bubbles_linux.png)|
-|__macOS:__|
+|__macOS & Android Emulator:__|
 |![Screenshot Linux](bubbles_macos.png)|
 
 #### Implementation
@@ -187,9 +187,10 @@ $ git clone --recursive https://github.com/vipalade/bubbles.git
  
 #### NOTES
 
- * **BoringSSL** and **solid_frame** libraries are used as git modules (i.e. the CMakeLists.txt of the native lib (client/android/app/CMakeLists.txt) directly embeds the CMakeList.txt files of BoringSSL and solidframe.
+ * **BoringSSL** and **SolidFrame** libraries are used as git modules (i.e. the CMakeLists.txt of the native lib (client/android/app/CMakeLists.txt) directly embeds the CMakeList.txt files of **BoringSSL** and **SolidFrame**.
  * **snappy** on the other hand is used as an external project (using ExternalProject_Add).
  * Although all libraries can be built as external projects, I'll maintain this status quo as an example of how to use git modules.
  * _Lesson learned_: For the ExternalProject_Add with **snappy** to work propperly (i.e. the native-lib to be able to link with libsnappy.a), I had to add "BUILD_BYPRODUCTS ${CMAKE_CURRENT_BINARY_DIR}/external/lib/libsnappy.a" field to ExternalProject_Add.
+ * _Lesson learned_: Building **BoringSSL** needs [**Go Programming Language**](https://golang.org/) to be installed on the sistem. So, when building **Bubbles** from within AndroidStudio, **Go** will be called via *gradle* -> *cmake* and at this point **Go** has to, somehow be in the PATH variable. This seems not to be a problem when running Android Studio on Linux, but on macOS, **Go** installs itself in PATH environment variable available from the Terminal but it is not available from applications - like Android Studio. The simplest solution is to launch Android Studio application from a terminal.
  
 
