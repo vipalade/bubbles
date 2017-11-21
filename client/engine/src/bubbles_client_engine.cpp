@@ -622,14 +622,16 @@ void Engine::onMessage(
 
         idbg(_rctx.recipientId()<<" MY COLOR: "<<d.rgb_color);
         //clear all events
-        auto& rplotdq = d.plotdq[d.write_plotdq_idx];
+        
+        //NOTE: we cannot clear here - we must move to Engine's thread
+        //auto& rplotdq = d.plotdq[d.write_plotdq_idx];
 
-        rplotdq.clear();
-        d.event_stubdq.clear();
+        //rplotdq.clear();
+        //d.event_stubdq.clear();
 
         //after activation, the mpipc will start sending pending EventsNotification messages
         _rctx.service().connectionNotifyEnterActiveState(_rctx.recipientId());
-        d.service.manager().notify(d.service.manager().id(*this), generic_event_category.event(GenericEvents::Update));
+        d.service.manager().notify(d.service.manager().id(*this), generic_event_category.event(GenericEvents::Resume));
     }else if(_rrecv_msg_ptr){
         //failed registering the connection
         edbg(_rctx.recipientId()<<" Connection registration failed because ["<<_rrecv_msg_ptr->message<<"]. Exiting");
