@@ -22,7 +22,7 @@ namespace client{
 using SchedulerT = solid::frame::Scheduler<solid::frame::Reactor>;
 
 struct EngineConfiguration{
-    EngineConfiguration(): max_event_queue_size(1024 * 8){}
+    EngineConfiguration(): max_event_queue_size(1024){}
     size_t      max_event_queue_size;
 };
 
@@ -143,7 +143,7 @@ private:
     ~Engine();
 
     void onEvent(solid::frame::ReactorContext &_rctx, solid::Event &&_uevent) override;
-    void doTrySendEvents(std::shared_ptr<EventsNotification> &&_rrecv_msg_ptr = std::shared_ptr<EventsNotification>{});
+    void doTrySendEvents();
 
     void doSetExitFunction(ExitFunctionT &&_uf);
     void doSetGuiUpdateFunction(GuiUpdateFunctionT &&_uf);

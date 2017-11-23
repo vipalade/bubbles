@@ -58,6 +58,10 @@ struct Engine::Data{
         auto_dist_x(-(auto_crt_w/2), auto_crt_w/2), auto_dist_y(-(auto_crt_h/2), auto_crt_h/2),
         auto_dist_steps(1, 100), paused(false)
     {
+        auto_plot[0].first = 0;
+        auto_plot[0].second = 0;
+        auto_plot[1].first = 0;
+        auto_plot[1].second = 0;
     }
 
     void discardPopEventQ(){
@@ -508,15 +512,12 @@ void Engine::doProcessIncomingNotifications(solid::frame::ReactorContext &_rctx)
     }
 }
 
-void Engine::doTrySendEvents(std::shared_ptr<EventsNotification> &&_rrecv_msg_ptr /*= std::shared_ptr<EventsNotification>{}*/){
-    idbg(""<< _rrecv_msg_ptr);
+void Engine::doTrySendEvents(){
+    idbg("");
     size_t      pop_eventq_idx = 0;
     {
         std::unique_lock<std::mutex> lock(d.mtx);
-        if(_rrecv_msg_ptr){
-            idbg(""<< d.events_message_ptr);
-            d.events_message_ptr = std::move(_rrecv_msg_ptr);
-        }
+        
         if(d.events_message_ptr and not d.paused){
             //the message is ready to fill - see which of the eventq we should use
             if(d.discarded_on_push){
@@ -661,7 +662,11 @@ void Engine::onMessage(
         }
     }else if(_rsent_msg_ptr){
         _rsent_msg_ptr->clear();
-        doTrySendEvents(std::move(_rsent_msg_ptr));
+        {
+            std::unique_lock<std::mutex> lock(d.mtx);
+            d.events_message_ptr = std::move(_rsent_msg_ptr);
+        }
+        d.service.manager().notify(d.service.manager().id(*this), generic_event_category.event(GenericEvents::Raise));
     }
 }
 

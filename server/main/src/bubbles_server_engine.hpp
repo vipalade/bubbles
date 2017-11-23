@@ -16,7 +16,7 @@ namespace server{
 struct ConnectionData;
 
 struct EngineConfiguration{
-    EngineConfiguration():connection_max_pending_count(4000){}
+    EngineConfiguration():connection_max_pending_count(1000){}
 
     size_t      connection_max_pending_count;
 };
