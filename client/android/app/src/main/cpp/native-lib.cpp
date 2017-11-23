@@ -333,6 +333,8 @@ jboolean Java_com_example_vapa_bubbles_BubblesActivity_nativeStart(
 
         cfg.client.connection_start_state = frame::mpipc::ConnectionState::Passive;
 
+        cfg.connection_keepalive_timeout_seconds = 30;
+
         {
             auto connection_stop_lambda = [](frame::mpipc::ConnectionContext &_ctx){
                 LOGI("connection stop");
