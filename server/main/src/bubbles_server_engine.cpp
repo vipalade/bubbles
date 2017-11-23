@@ -299,7 +299,7 @@ void Engine::onMessage(
 
 
         rcon.pending_count -= (1 + _rsent_msg_ptr->event_stub.events.size());
-        rcon.pending_count -= _rrecv_msg_ptr->event_stubs.size();
+        rcon.pending_count -= _rsent_msg_ptr->event_stubs.size();
         
         idbg(rcon_data.room_entry_index<<" pend_cnt = "<<rcon.pending_count<<" eventsz = "<<_rsent_msg_ptr->event_stub.events.size());
 
