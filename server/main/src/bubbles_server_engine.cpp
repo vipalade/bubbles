@@ -21,14 +21,14 @@ namespace server{
 
 enum Error{
     ErrorAlreadyRegistered = 1,
-    ErrorNoColour,
+    ErrorNoColor,
 };
 
 const char * error_message(const uint32_t err_id){
     switch(err_id){
         case 0: return "No error";
         case ErrorAlreadyRegistered: return "Already registered - closing connection";
-        case ErrorNoColour: return "No color available - closing connection";
+        case ErrorNoColor: return "No color available - closing connection";
         default:
             return "Unknown error";
     }
@@ -108,7 +108,7 @@ struct ConnectionStub{
 
 using ConnectionVectorT = deque<ConnectionStub>;
 using FreeStackT = stack<size_t>;
-using ColourSetT = unordered_set<uint32_t>;
+using ColorSetT = unordered_set<uint32_t>;
 
 
 struct RoomStub{
@@ -117,7 +117,7 @@ struct RoomStub{
     string              name;
     ConnectionVectorT   connections;
     FreeStackT          free_stack;
-    ColourSetT          used_colors;
+    ColorSetT          used_colors;
 
     uint32_t            crt_r_color;
     uint32_t            crt_g_color;
@@ -430,12 +430,12 @@ uint32_t Engine::registerConnection(
     }
 
     if(rgb_color == 0){
-        rgb_color = createNewColour(_rcon_data.room_index);
+        rgb_color = createNewColor(_rcon_data.room_index);
     }
 
     if(rgb_color == 0){
         _rcon_data.clear();
-        return ErrorNoColour;
+        return ErrorNoColor;
     }
 
     //register connection:
@@ -514,7 +514,7 @@ void Engine::unregisterConnection(solid::frame::mpipc::ConnectionContext &_rctx,
 }
 
 
-uint32_t Engine::createNewColour(const size_t _room_index){
+uint32_t Engine::createNewColor(const size_t _room_index){
     RoomStub        &room = d.rooms[_room_index];
     uint32_t color = 0;
 

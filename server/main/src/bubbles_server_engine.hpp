@@ -84,7 +84,7 @@ private:
 
     void unregisterConnection(solid::frame::mpipc::ConnectionContext &_rctx, ConnectionData &_rcon_data);
 
-    uint32_t createNewColour(const size_t _room_index);
+    uint32_t createNewColor(const size_t _room_index);
 
     void fetchLastEvents(
         solid::frame::mpipc::ConnectionContext &_rctx, ConnectionData &_rcon_data,
