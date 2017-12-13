@@ -152,6 +152,7 @@ private:
     void onAutoPilot(solid::frame::ReactorContext &_rctx);
     void doPause(solid::frame::ReactorContext &_rctx);
     void doResume(solid::frame::ReactorContext &_rctx);
+    void doHandleConnectionStop(solid::frame::ReactorContext &_rctx);
 private:
     friend struct PlotIterator;
     struct Data;

@@ -44,6 +44,21 @@ using AutoAtomicPairT = std::pair<atomic<int>, atomic<int>>;
 using AutoQueueT = std::queue<AutoPairT>;
 using AtomicBoolT = atomic<bool>;
 
+enum class Events {
+    ConnectionStopped
+};
+
+const EventCategory<Events> event_category{
+    "bubbles::client::engine::event_category",
+    [](const Events _evt) {
+        switch (_evt) {
+        case Events::ConnectionStopped:
+            return "ConnectionStopped";
+        default:
+            return "unknown";
+        }
+    }};
+
 struct Engine::Data{
     Data(
         solid::frame::ServiceT &_rsvc,
@@ -91,7 +106,8 @@ struct Engine::Data{
     uint32_t                                rgb_color;
     bool                                    auto_pilot;
     Event                                   last_event;
-    std::shared_ptr<EventsNotification>     events_message_ptr;
+    std::shared_ptr<EventsNotification>     events_message_ptr;//shared_ptr beacause mpipc sendMessage uses shared_ptr
+    std::shared_ptr<EventsNotification>     tmp_events_message_ptr;
 
     //all functions must be called on the engine's thread
     ExitFunctionT                           exit_function;
@@ -274,6 +290,7 @@ void Engine::onEvent(frame::ReactorContext &_rctx, solid::Event &&_uevent) /*ove
             onAutoPilot(_rctx);
         }
     }else if(generic_event_category.event(GenericEvents::Kill) == _uevent){
+        d.paused = true;
         postStop(_rctx);
     }else if(generic_event_category.event(GenericEvents::Raise) == _uevent){
         doTrySendEvents();
@@ -289,6 +306,8 @@ void Engine::onEvent(frame::ReactorContext &_rctx, solid::Event &&_uevent) /*ove
         doPause(_rctx);
     }else if(generic_event_category.event(GenericEvents::Resume) == _uevent){
         doResume(_rctx);
+    }else if(event_category.event(Events::ConnectionStopped) == _uevent){
+        doHandleConnectionStop(_rctx);
     }
 }
 
@@ -312,6 +331,25 @@ void Engine::doResume(solid::frame::ReactorContext &_rctx){
 
     if(autoPilot()){
         this->post(_rctx, [this](solid::frame::ReactorContext &_rctx, solid::Event&&){onAutoPilot(_rctx);});
+    }
+}
+
+void Engine::doHandleConnectionStop(solid::frame::ReactorContext &_rctx){
+    if(d.events_message_ptr and not d.paused){
+        //connection stopped and there is no activity to send, resend the last event
+        d.events_message_ptr->event_stub.event = d.last_event;
+
+        std::shared_ptr<EventsNotification> tmp_ptr{std::move(d.events_message_ptr)};
+        solid::ErrorConditionT  err = d.rmpipc.sendMessage(d.server_endpoint.c_str(), tmp_ptr);
+        if(err){
+            edbg(""<< " sendMessage error: "<<err.message());
+        }
+        
+        //clear all events
+        auto& rplotdq = d.plotdq[d.write_plotdq_idx];
+
+        rplotdq.clear();
+        d.event_stubdq.clear();
     }
 }
 
@@ -516,9 +554,14 @@ void Engine::doTrySendEvents(){
     idbg("");
     size_t      pop_eventq_idx = 0;
     {
-        std::unique_lock<std::mutex> lock(d.mtx);
+        if(d.tmp_events_message_ptr){
+            SOLID_ASSERT(!d.events_message_ptr);
+            d.events_message_ptr = std::move(d.tmp_events_message_ptr);
+        }
+        
         
         if(d.events_message_ptr and not d.paused){
+            std::unique_lock<std::mutex> lock(d.mtx);
             //the message is ready to fill - see which of the eventq we should use
             if(d.discarded_on_push){
                 //the push eventq is already rotating, drop what remains on pop_eventq
@@ -577,16 +620,8 @@ void Engine::onConnectionStart(solid::frame::mpipc::ConnectionContext &_rctx){
 
 void Engine::onConnectionStop(solid::frame::mpipc::ConnectionContext &_rctx){
     idbg(_rctx.recipientId()<<' '<<_rctx.error().message()<<' '<<d.events_message_ptr);
-
-    if(d.events_message_ptr and not d.paused){
-        //connection stopped and there is no activity to send, resend the last event
-        d.events_message_ptr->event_stub.event = d.last_event;
-
-        std::shared_ptr<EventsNotification> tmp_ptr{std::move(d.events_message_ptr)};
-        solid::ErrorConditionT  err = d.rmpipc.sendMessage(d.server_endpoint.c_str(), tmp_ptr);
-        if(err){
-            edbg(""<< " sendMessage error: "<<err.message());
-        }
+    if(not d.paused){
+        d.service.manager().notify(d.service.manager().id(*this), event_category.event(Events::ConnectionStopped));
     }
 }
 
@@ -662,10 +697,8 @@ void Engine::onMessage(
         }
     }else if(_rsent_msg_ptr){
         _rsent_msg_ptr->clear();
-        {
-            std::unique_lock<std::mutex> lock(d.mtx);
-            d.events_message_ptr = std::move(_rsent_msg_ptr);
-        }
+        SOLID_ASSERT(!d.tmp_events_message_ptr);
+        d.tmp_events_message_ptr = std::move(_rsent_msg_ptr);
         d.service.manager().notify(d.service.manager().id(*this), generic_event_category.event(GenericEvents::Raise));
     }
 }

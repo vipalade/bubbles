@@ -326,8 +326,8 @@ int main(int argc, char *argv[]){
     widget.start();
 
     int rv = app.exec();
-
-
+    
+    engine_ptr->pause();
 
     return rv;
 }
