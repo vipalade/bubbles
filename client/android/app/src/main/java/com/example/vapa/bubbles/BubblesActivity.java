@@ -58,6 +58,8 @@ public class BubblesActivity extends AppCompatActivity {
     @Override
     protected void onDestroy(){
         bubblesView.setActivity(null);
+        Log.i("BubblesActivity", "onDestroy");
+        nativePause();
     }
 
     @Override
