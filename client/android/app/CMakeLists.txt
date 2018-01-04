@@ -31,7 +31,7 @@ set(CMAKE_ASM_FLAGS_RELEASE   "${ANDROID_COMPILER_FLAGS_RELEASE} ${CMAKE_ASM_FLA
 
 add_subdirectory(src/main/cpp/boringssl)
 add_subdirectory(src/main/cpp/solidframe)
-add_subdirectory(src/main/cpp/client/engine)
+add_subdirectory(src/main/cpp/engine)
 
 message("Android ABI: ${ANDROID_ABI}")
 message("Android API level: ${ANDROID_NATIVE_API_LEVEL}")
