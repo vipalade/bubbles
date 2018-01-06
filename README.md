@@ -193,4 +193,17 @@ $ git clone --recursive https://github.com/vipalade/bubbles.git
  * _Lesson learned_: For the ExternalProject_Add with **snappy** to work propperly (i.e. the native-lib to be able to link with libsnappy.a), I had to add "BUILD_BYPRODUCTS ${CMAKE_CURRENT_BINARY_DIR}/external/lib/libsnappy.a" field to ExternalProject_Add.
  * _Lesson learned_: Building **BoringSSL** needs [**Go Programming Language**](https://golang.org/) to be installed on the sistem. So, when building **Bubbles** from within AndroidStudio, **Go** will be called via *gradle* -> *cmake* and at this point **Go** has to, somehow be in the PATH variable. This seems not to be a problem when running Android Studio on Linux, but on macOS, **Go** installs itself in PATH environment variable available from the Terminal but it is not available from applications - like Android Studio. The simplest solution is to launch Android Studio application from a terminal.
  
+### With iOS client
 
+First, one needs to have CocoaPods [installed](https://cocoapods.org/#install):
+
+```bash
+$ sudo gem install cocoapods
+```
+
+```bash
+$ git clone https://github.com/vipalade/bubbles.git
+$ cd bubbles/client/ios/bubbles
+$ pod install
+$ open bubbles.xcworkspace
+```
