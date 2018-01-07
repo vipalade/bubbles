@@ -39,11 +39,13 @@ static const char* kTAG = "bubbles-native";
   ((void)__android_log_print(ANDROID_LOG_ERROR, kTAG, __VA_ARGS__))
 
 namespace {
-    typedef frame::Scheduler<frame::aio::Reactor>   AioSchedulerT;
-    typedef frame::Scheduler<frame::Reactor>        SchedulerT;
-    typedef frame::aio::openssl::Context            SecureContextT;
+
+    using AioSchedulerT = frame::Scheduler<frame::aio::Reactor>;
+    using SchedulerT = frame::Scheduler<frame::Reactor>;
+    using SecureContextT = frame::aio::openssl::Context;
     using BubblesEnginePointerT = bubbles::client::Engine::PointerT;
     using PlotIteratorT = bubbles::client::PlotIterator;
+
     struct Context {
         Context(
 

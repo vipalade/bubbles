@@ -10,8 +10,6 @@ include_directories(
     src/main/cpp/solidframe
     src/main/cpp
     ${CMAKE_CURRENT_BINARY_DIR}/src/main/cpp/solidframe
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../../
-    ${CMAKE_CURRENT_SOURCE_DIR}/../
 )
 #workarround invalid android.toolchaing.cmake - only for clang
 #https://android-review.googlesource.com/#/c/291588/4/build/cmake/android.toolchain.cmake
@@ -31,7 +29,7 @@ set(CMAKE_ASM_FLAGS_RELEASE   "${ANDROID_COMPILER_FLAGS_RELEASE} ${CMAKE_ASM_FLA
 
 add_subdirectory(src/main/cpp/boringssl)
 add_subdirectory(src/main/cpp/solidframe)
-add_subdirectory(src/main/cpp/engine)
+add_subdirectory(src/main/cpp/client/engine)
 
 message("Android ABI: ${ANDROID_ABI}")
 message("Android API level: ${ANDROID_NATIVE_API_LEVEL}")
@@ -84,15 +82,16 @@ include_directories(
 # Gradle automatically packages shared libraries with your APK.
 
 add_library( # Sets the name of the library.
-             native-lib
+        native-lib
 
-             # Sets the library as a shared library.
-             MODULE
+        # Sets the library as a shared library.
+        MODULE
 
-             # Provides a relative path to your source file(s).
-             # Associated headers in the same location as their source
-             # file are automatically included.
-             src/main/cpp/native-lib.cpp )
+        # Provides a relative path to your source file(s).
+        # Associated headers in the same location as their source
+        # file are automatically included.
+        src/main/cpp/native-lib.cpp 
+)
 
 # - do not understand why this dependency is not considered - moved to egine
 add_dependencies(native-lib native_build_snappy)
@@ -104,31 +103,32 @@ add_dependencies(native-lib native_build_snappy)
 # completing its build.
 
 find_library( # Sets the name of the path variable.
-              log-lib
+        log-lib
 
-              # Specifies the name of the NDK library that
-              # you want CMake to locate.
-              log )
+        # Specifies the name of the NDK library that
+        # you want CMake to locate.
+        log
+)
 
 # Specifies libraries CMake should link to your target library. You
 # can link multiple libraries, such as libraries you define in the
 # build script, prebuilt third-party libraries, or system libraries.
 
 target_link_libraries( # Specifies the target library.
-                native-lib
+        native-lib
 
-                # Links the target library to the log library
-                # included in the NDK.
-                ${log-lib}
-                bubbles_client_engine
-                solid_frame_mpipc
-                solid_frame_aio
-                solid_frame_aio_openssl
-                solid_frame
-                solid_serialization
-                solid_utility
-                solid_system
-                ${NATIVE_SNAPPY_LIB}
-                crypto
-                ssl
+        # Links the target library to the log library
+        # included in the NDK.
+        ${log-lib}
+        bubbles_client_engine
+        solid_frame_mpipc
+        solid_frame_aio
+        solid_frame_aio_openssl
+        solid_frame
+        solid_serialization
+        solid_utility
+        solid_system
+        ${NATIVE_SNAPPY_LIB}
+        crypto
+        ssl
 )

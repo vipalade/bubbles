@@ -6,5 +6,9 @@ target 'bubbles' do
   use_frameworks!
 
   # Pods for bubbles
+  pod 'BoringSSL', '~> 9.1'
+  pod 'Snappy', '~> 1.1'
   pod 'SolidFrame/frame_mpipc', :configuration => 'Debug', :git => 'https://github.com/vipalade/solidframe.git', :branch => 'podspec'
+  pod 'SolidFrame/serialization', :configuration => 'Debug', :git => 'https://github.com/vipalade/solidframe.git', :branch => 'podspec'
+  pod 'SolidFrame/frame_aio_openssl', :configuration => 'Debug', :git => 'https://github.com/vipalade/solidframe.git', :branch => 'podspec'
 end

@@ -8,6 +8,9 @@
 
 /* Begin PBXBuildFile section */
 		1EA31874CBCD049CC9A29843 /* Pods_bubbles.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 50956D6E8A9EA741BBE2D0F9 /* Pods_bubbles.framework */; };
+		A7247E1420022B2300BE4947 /* engine_glue.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A7247E1220022B2300BE4947 /* engine_glue.cpp */; };
+		A7247E202002CD5A00BE4947 /* protocol in Resources */ = {isa = PBXBuildFile; fileRef = A7247E1F2002CD5A00BE4947 /* protocol */; };
+		A7247E222002CD7000BE4947 /* client in Resources */ = {isa = PBXBuildFile; fileRef = A7247E212002CD7000BE4947 /* client */; };
 		A7802BA52001067B004660D4 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7802BA42001067B004660D4 /* AppDelegate.swift */; };
 		A7802BA72001067B004660D4 /* FrontViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7802BA62001067B004660D4 /* FrontViewController.swift */; };
 		A7802BAA2001067B004660D4 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = A7802BA82001067B004660D4 /* Main.storyboard */; };
@@ -20,6 +23,11 @@
 /* Begin PBXFileReference section */
 		08AEEF2F6BD36763A9D4F007 /* Pods-bubbles.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-bubbles.release.xcconfig"; path = "Pods/Target Support Files/Pods-bubbles/Pods-bubbles.release.xcconfig"; sourceTree = "<group>"; };
 		50956D6E8A9EA741BBE2D0F9 /* Pods_bubbles.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_bubbles.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		A7247E1120022B2200BE4947 /* bubbles-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "bubbles-Bridging-Header.h"; sourceTree = "<group>"; };
+		A7247E1220022B2300BE4947 /* engine_glue.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = engine_glue.cpp; sourceTree = "<group>"; };
+		A7247E1320022B2300BE4947 /* engine_glue.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = engine_glue.hpp; sourceTree = "<group>"; };
+		A7247E1F2002CD5A00BE4947 /* protocol */ = {isa = PBXFileReference; lastKnownFileType = folder; name = protocol; path = ../../../../protocol; sourceTree = "<group>"; };
+		A7247E212002CD7000BE4947 /* client */ = {isa = PBXFileReference; lastKnownFileType = folder; path = client; sourceTree = "<group>"; };
 		A7802BA12001067B004660D4 /* bubbles.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = bubbles.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A7802BA42001067B004660D4 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		A7802BA62001067B004660D4 /* FrontViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FrontViewController.swift; sourceTree = "<group>"; };
@@ -73,14 +81,19 @@
 		A7802BA32001067B004660D4 /* bubbles */ = {
 			isa = PBXGroup;
 			children = (
+				A7247E212002CD7000BE4947 /* client */,
+				A7247E1F2002CD5A00BE4947 /* protocol */,
 				A7802BA42001067B004660D4 /* AppDelegate.swift */,
 				A7802BA62001067B004660D4 /* FrontViewController.swift */,
 				A7802BB620010B7D004660D4 /* DrawViewController.swift */,
+				A7247E1220022B2300BE4947 /* engine_glue.cpp */,
+				A7247E1320022B2300BE4947 /* engine_glue.hpp */,
 				A7802BB820010C1C004660D4 /* DrawView.swift */,
 				A7802BA82001067B004660D4 /* Main.storyboard */,
 				A7802BAB2001067B004660D4 /* Assets.xcassets */,
 				A7802BAD2001067B004660D4 /* LaunchScreen.storyboard */,
 				A7802BB02001067B004660D4 /* Info.plist */,
+				A7247E1120022B2200BE4947 /* bubbles-Bridging-Header.h */,
 			);
 			path = bubbles;
 			sourceTree = "<group>";
@@ -129,6 +142,7 @@
 				TargetAttributes = {
 					A7802BA02001067B004660D4 = {
 						CreatedOnToolsVersion = 9.2;
+						LastSwiftMigration = 0920;
 						ProvisioningStyle = Automatic;
 					};
 				};
@@ -156,8 +170,10 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A7247E222002CD7000BE4947 /* client in Resources */,
 				A7802BAF2001067B004660D4 /* LaunchScreen.storyboard in Resources */,
 				A7802BAC2001067B004660D4 /* Assets.xcassets in Resources */,
+				A7247E202002CD5A00BE4947 /* protocol in Resources */,
 				A7802BAA2001067B004660D4 /* Main.storyboard in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -205,10 +221,14 @@
 			);
 			inputPaths = (
 				"${SRCROOT}/Pods/Target Support Files/Pods-bubbles/Pods-bubbles-frameworks.sh",
+				"${BUILT_PRODUCTS_DIR}/BoringSSL/openssl.framework",
+				"${BUILT_PRODUCTS_DIR}/Snappy/Snappy.framework",
 				"${BUILT_PRODUCTS_DIR}/SolidFrame/SolidFrame.framework",
 			);
 			name = "[CP] Embed Pods Frameworks";
 			outputPaths = (
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/openssl.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/Snappy.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/SolidFrame.framework",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -226,6 +246,7 @@
 				A7802BB720010B7D004660D4 /* DrawViewController.swift in Sources */,
 				A7802BA72001067B004660D4 /* FrontViewController.swift in Sources */,
 				A7802BB920010C1C004660D4 /* DrawView.swift in Sources */,
+				A7247E1420022B2300BE4947 /* engine_glue.cpp in Sources */,
 				A7802BA52001067B004660D4 /* AppDelegate.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -364,11 +385,14 @@
 			baseConfigurationReference = F7BC8B68486507986AF8460B /* Pods-bubbles.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				INFOPLIST_FILE = bubbles/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = solidframe.bubbles.bubbles;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_OBJC_BRIDGING_HEADER = "bubbles/bubbles-Bridging-Header.h";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 4.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -379,11 +403,13 @@
 			baseConfigurationReference = 08AEEF2F6BD36763A9D4F007 /* Pods-bubbles.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				INFOPLIST_FILE = bubbles/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = solidframe.bubbles.bubbles;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_OBJC_BRIDGING_HEADER = "bubbles/bubbles-Bridging-Header.h";
 				SWIFT_VERSION = 4.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
