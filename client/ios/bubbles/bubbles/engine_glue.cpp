@@ -28,8 +28,8 @@
 #include "solid/frame/mpipc/mpipcsocketstub_openssl.hpp"
 //#include "solid/frame/mpipc/mpipccompression_snappy.hpp"
 
-#include "client/engine/bubbles_client_engine.hpp"
 #include "protocol/bubbles_messages.hpp"
+#include "client/engine/bubbles_client_engine.hpp"
 
 
 using namespace std;

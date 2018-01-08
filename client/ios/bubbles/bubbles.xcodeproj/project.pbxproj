@@ -9,8 +9,6 @@
 /* Begin PBXBuildFile section */
 		1EA31874CBCD049CC9A29843 /* Pods_bubbles.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 50956D6E8A9EA741BBE2D0F9 /* Pods_bubbles.framework */; };
 		A7247E1420022B2300BE4947 /* engine_glue.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A7247E1220022B2300BE4947 /* engine_glue.cpp */; };
-		A7247E202002CD5A00BE4947 /* protocol in Resources */ = {isa = PBXBuildFile; fileRef = A7247E1F2002CD5A00BE4947 /* protocol */; };
-		A7247E222002CD7000BE4947 /* client in Resources */ = {isa = PBXBuildFile; fileRef = A7247E212002CD7000BE4947 /* client */; };
 		A7802BA52001067B004660D4 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7802BA42001067B004660D4 /* AppDelegate.swift */; };
 		A7802BA72001067B004660D4 /* FrontViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7802BA62001067B004660D4 /* FrontViewController.swift */; };
 		A7802BAA2001067B004660D4 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = A7802BA82001067B004660D4 /* Main.storyboard */; };
@@ -26,8 +24,6 @@
 		A7247E1120022B2200BE4947 /* bubbles-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "bubbles-Bridging-Header.h"; sourceTree = "<group>"; };
 		A7247E1220022B2300BE4947 /* engine_glue.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = engine_glue.cpp; sourceTree = "<group>"; };
 		A7247E1320022B2300BE4947 /* engine_glue.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = engine_glue.hpp; sourceTree = "<group>"; };
-		A7247E1F2002CD5A00BE4947 /* protocol */ = {isa = PBXFileReference; lastKnownFileType = folder; name = protocol; path = ../../../../protocol; sourceTree = "<group>"; };
-		A7247E212002CD7000BE4947 /* client */ = {isa = PBXFileReference; lastKnownFileType = folder; path = client; sourceTree = "<group>"; };
 		A7802BA12001067B004660D4 /* bubbles.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = bubbles.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A7802BA42001067B004660D4 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		A7802BA62001067B004660D4 /* FrontViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FrontViewController.swift; sourceTree = "<group>"; };
@@ -81,8 +77,6 @@
 		A7802BA32001067B004660D4 /* bubbles */ = {
 			isa = PBXGroup;
 			children = (
-				A7247E212002CD7000BE4947 /* client */,
-				A7247E1F2002CD5A00BE4947 /* protocol */,
 				A7802BA42001067B004660D4 /* AppDelegate.swift */,
 				A7802BA62001067B004660D4 /* FrontViewController.swift */,
 				A7802BB620010B7D004660D4 /* DrawViewController.swift */,
@@ -170,10 +164,8 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A7247E222002CD7000BE4947 /* client in Resources */,
 				A7802BAF2001067B004660D4 /* LaunchScreen.storyboard in Resources */,
 				A7802BAC2001067B004660D4 /* Assets.xcassets in Resources */,
-				A7247E202002CD5A00BE4947 /* protocol in Resources */,
 				A7802BAA2001067B004660D4 /* Main.storyboard in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -222,12 +214,14 @@
 			inputPaths = (
 				"${SRCROOT}/Pods/Target Support Files/Pods-bubbles/Pods-bubbles-frameworks.sh",
 				"${BUILT_PRODUCTS_DIR}/BoringSSL/openssl.framework",
+				"${BUILT_PRODUCTS_DIR}/BubblesEngine/BubblesEngine.framework",
 				"${BUILT_PRODUCTS_DIR}/Snappy/Snappy.framework",
 				"${BUILT_PRODUCTS_DIR}/SolidFrame/SolidFrame.framework",
 			);
 			name = "[CP] Embed Pods Frameworks";
 			outputPaths = (
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/openssl.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/BubblesEngine.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/Snappy.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/SolidFrame.framework",
 			);
