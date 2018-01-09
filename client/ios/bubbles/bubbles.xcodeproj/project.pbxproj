@@ -215,14 +215,12 @@
 				"${SRCROOT}/Pods/Target Support Files/Pods-bubbles/Pods-bubbles-frameworks.sh",
 				"${BUILT_PRODUCTS_DIR}/BoringSSL/openssl.framework",
 				"${BUILT_PRODUCTS_DIR}/BubblesEngine/BubblesEngine.framework",
-				"${BUILT_PRODUCTS_DIR}/Snappy/Snappy.framework",
 				"${BUILT_PRODUCTS_DIR}/SolidFrame/SolidFrame.framework",
 			);
 			name = "[CP] Embed Pods Frameworks";
 			outputPaths = (
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/openssl.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/BubblesEngine.framework",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/Snappy.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/SolidFrame.framework",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
