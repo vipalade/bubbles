@@ -635,7 +635,7 @@ void Engine::doSetAutoUpdateFunction(AutoUpdateFunctionT &&_uf){
     d.auto_update_function = _uf;
 }
 
-void Engine::setFrame(size_t _w, size_t _h){
+void Engine::setFrame(int _w, int _h){
     std::unique_lock<std::mutex>    lock(d.mtx);
     d.auto_mod_w = _w;
     d.auto_mod_h = _h;

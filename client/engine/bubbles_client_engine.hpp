@@ -104,7 +104,7 @@ public:
         doSetAutoUpdateFunction(std::move(f));
     }
 
-    void setFrame(size_t _w, size_t _h);
+    void setFrame(int _w, int _h);
 
     PlotIterator plot();
 

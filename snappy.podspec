@@ -72,9 +72,111 @@ Pod::Spec.new do |s|
   #  Supports git, hg, bzr, svn and HTTP.
   #
 
-  s.source       = { :git => "https://github.com/google/snappy.git" }
+  s.source       = { :git => "https://github.com/google/snappy.git", :tag => '1.1.7' }
 
+  s.header_mappings_dir = '.'
 
+  s.prepare_command = <<-END_OF_COMMAND
+    cat > "snappy-stubs-public.h" <<EOF
+    #ifndef THIRD_PARTY_SNAPPY_OPENSOURCE_SNAPPY_STUBS_PUBLIC_H_
+    #define THIRD_PARTY_SNAPPY_OPENSOURCE_SNAPPY_STUBS_PUBLIC_H_
+
+        #include <stdint.h>
+        #include <stddef.h>=
+        #include <sys/uio.h>
+        
+        #define SNAPPY_MAJOR 
+        #define SNAPPY_MINOR 
+        #define SNAPPY_PATCHLEVEL 
+        #define SNAPPY_VERSION \
+            ((SNAPPY_MAJOR << 16) | (SNAPPY_MINOR << 8) | SNAPPY_PATCHLEVEL)
+
+        #include <string>
+
+        namespace snappy {
+
+            typedef int8_t int8;
+            typedef uint8_t uint8;
+            typedef int16_t int16;
+            typedef uint16_t uint16;
+            typedef int32_t int32;
+            typedef uint32_t uint32;
+            typedef int64_t int64;
+            typedef uint64_t uint64;
+            
+            typedef std::string string;
+
+        }  // namespace snappy
+
+    #endif  // THIRD_PARTY_SNAPPY_OPENSOURCE_SNAPPY_STUBS_PUBLIC_H_
+    EOF
+    cat > "config.h" <<EOF
+    ifndef THIRD_PARTY_SNAPPY_OPENSOURCE_CMAKE_CONFIG_H_
+    #define THIRD_PARTY_SNAPPY_OPENSOURCE_CMAKE_CONFIG_H_
+
+        /* Define to 1 if the compiler supports __builtin_ctz and friends. */
+        #define HAVE_BUILTIN_CTZ 1
+
+        /* Define to 1 if the compiler supports __builtin_expect. */
+        #define HAVE_BUILTIN_EXPECT 1
+
+        /* Define to 1 if you have the <byteswap.h> header file. */
+        #define HAVE_BYTESWAP_H 1
+
+        /* Define to 1 if you have a definition for mmap() in <sys/mman.h>. */
+        #define HAVE_FUNC_MMAP 1
+
+        /* Define to 1 if you have a definition for sysconf() in <unistd.h>. */
+        #define HAVE_FUNC_SYSCONF 1
+
+        /* Define to 1 to use the gflags package for command-line parsing. */
+        /* #undef HAVE_GFLAGS */
+
+        /* Define to 1 if you have Google Test. */
+        /* #undef HAVE_GTEST */
+
+        /* Define to 1 if you have the `lzo2' library (-llzo2). */
+        /* #undef HAVE_LIBLZO2 */
+
+        /* Define to 1 if you have the `z' library (-lz). */
+        #define HAVE_LIBZ 1
+
+        /* Define to 1 if you have the <stddef.h> header file. */
+        #define HAVE_STDDEF_H 1
+
+        /* Define to 1 if you have the <stdint.h> header file. */
+        #define HAVE_STDINT_H 1
+
+        /* Define to 1 if you have the <sys/endian.h> header file. */
+        /* #undef HAVE_SYS_ENDIAN_H */
+
+        /* Define to 1 if you have the <sys/mman.h> header file. */
+        #define HAVE_SYS_MMAN_H 1
+
+        /* Define to 1 if you have the <sys/resource.h> header file. */
+        #define HAVE_SYS_RESOURCE_H 1
+
+        /* Define to 1 if you have the <sys/time.h> header file. */
+        #define HAVE_SYS_TIME_H 1
+
+        /* Define to 1 if you have the <sys/uio.h> header file. */
+        #define HAVE_SYS_UIO_H 1
+
+        /* Define to 1 if you have the <unistd.h> header file. */
+        #define HAVE_UNISTD_H 1
+
+        /* Define to 1 if you have the <windows.h> header file. */
+        /* #undef HAVE_WINDOWS_H */
+
+        /* Define to 1 if your processor stores words with the most significant byte
+        first (like Motorola and SPARC, unlike Intel and VAX). */
+        /* #undef SNAPPY_IS_BIG_ENDIAN */
+
+    #endif  // THIRD_PARTY_SNAPPY_OPENSOURCE_CMAKE_CONFIG_H_
+
+    EOF
+  END_OF_COMMAND
+  
   # ――― Source Code ―――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――― #
   #
   #  CocoaPods is smart about how it includes source code. For source files
@@ -88,6 +190,7 @@ Pod::Spec.new do |s|
 
   s.public_header_files = '*.h'
   s.source_files = '*.{cc,h}'
+  s.exclude_files = '*test.cc'
   
   s.xcconfig = { 'HEADER_SEARCH_PATHS' => '"$(PODS_ROOT)/snappy" "$(PODS_ROOT)"',  'USER_HEADER_SEARCH_PATHS' => '"$(PODS_ROOT)/snappy" "$(PODS_ROOT)"'}
 
