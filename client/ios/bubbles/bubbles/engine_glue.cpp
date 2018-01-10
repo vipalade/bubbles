@@ -26,7 +26,7 @@
 #include "solid/frame/mpipc/mpipcconfiguration.hpp"
 #include "solid/frame/mpipc/mpipcprotocol_serialization_v1.hpp"
 #include "solid/frame/mpipc/mpipcsocketstub_openssl.hpp"
-//#include "solid/frame/mpipc/mpipccompression_snappy.hpp"
+#include "solid/frame/mpipc/mpipccompression_snappy.hpp"
 
 #include "protocol/bubbles_messages.hpp"
 #include "client/engine/bubbles_client_engine.hpp"
@@ -271,7 +271,7 @@ int engine_start(
         
         if(_compress){
             //configure Snappy compression:
-            //frame::mpipc::snappy::setup(cfg);
+            frame::mpipc::snappy::setup(cfg);
         }
         
         err = g_ctx.ipcsvc.reconfigure(std::move(cfg));

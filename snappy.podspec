@@ -82,7 +82,7 @@ Pod::Spec.new do |s|
     #define THIRD_PARTY_SNAPPY_OPENSOURCE_SNAPPY_STUBS_PUBLIC_H_
 
         #include <stdint.h>
-        #include <stddef.h>=
+        #include <stddef.h>
         #include <sys/uio.h>
         
         #define SNAPPY_MAJOR 
