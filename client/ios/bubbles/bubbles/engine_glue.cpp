@@ -195,6 +195,16 @@ int engine_start(
     const char *_ssl_client_key
 ){
     
+#ifdef SOLID_HAS_DEBUG
+    {
+        string dbgout;
+        Debug::the().levelMask("view");
+        Debug::the().moduleMask("all");
+        Debug::the().initStdErr("false", &dbgout);
+        dbgout.clear();
+    }
+#endif
+
     string verify_authority_str{_ssl_verify_authority};
     string client_cert_str{_ssl_client_cert};
     string client_key_str{_ssl_client_key};
@@ -298,13 +308,20 @@ int engine_start(
         return -1;
     }
     g_ctx.started = true;
+    cout<<"Engine started"<<endl;
     return 0;
 }
 
 namespace{
 
-void exit_callback(){}
-void gui_update_callback(){}
-void auto_move_callback(){}
+void exit_callback(){
+    cout<<"exit_callback"<<endl;
+}
+void gui_update_callback(){
+    cout<<"gui_update_callback"<<endl;
+}
+void auto_move_callback(){
+    cout<<"auto_move_callback"<<endl;
+}
     
 }//namespace

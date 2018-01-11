@@ -336,6 +336,7 @@ void Engine::doResume(solid::frame::ReactorContext &_rctx){
 
 void Engine::doHandleConnectionStop(solid::frame::ReactorContext &_rctx){
     if(d.events_message_ptr and not d.paused){
+        idbg("");
         //connection stopped and there is no activity to send, resend the last event
         d.events_message_ptr->event_stub.event = d.last_event;
 
