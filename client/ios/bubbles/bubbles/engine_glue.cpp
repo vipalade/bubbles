@@ -66,10 +66,6 @@ namespace {
         PlotIteratorT           plotit;
     }g_ctx;
     
-    void exit_callback();
-    void gui_update_callback();
-    void auto_move_callback();
-    
 }//namespace
 
 
@@ -192,7 +188,10 @@ int engine_start(
     const int _auto_pilot,
     const char *_ssl_verify_authority,
     const char *_ssl_client_cert,
-    const char *_ssl_client_key
+    const char *_ssl_client_key,
+    void *_pexit_data, ExitCallbackT _exit_fnc,
+    void *_pupdate_data, GUIUpdateCallbackT _update_fnc,
+    void *_pauto_data, AutoUpdateCallbackT _auto_fnc
 ){
     
 #ifdef SOLID_HAS_DEBUG
@@ -294,10 +293,21 @@ int engine_start(
     
     {
         //set the callbacks
+        auto exit_closure = [_pexit_data, _exit_fnc](){
+            _exit_fnc(_pexit_data);
+        };
+        auto update_closure = [_pupdate_data, _update_fnc](){
+            _update_fnc(_pupdate_data);
+        };
+        auto auto_closure = [_pauto_data, _auto_fnc](){
+            int x,y;
+            g_ctx.engine_ptr->getAutoPosition(x, y);
+            _auto_fnc(_pauto_data, x, y);
+        };
         
-        g_ctx.engine_ptr->setExitFunction(exit_callback);
-        g_ctx.engine_ptr->setAutoUpdateFunction(auto_move_callback);
-        g_ctx.engine_ptr->setGuiUpdateFunction(gui_update_callback);
+        g_ctx.engine_ptr->setExitFunction(exit_closure);
+        g_ctx.engine_ptr->setAutoUpdateFunction(auto_closure);
+        g_ctx.engine_ptr->setGuiUpdateFunction(update_closure);
         
     }
     
@@ -312,16 +322,49 @@ int engine_start(
     return 0;
 }
 
-namespace{
+void engine_move(int _x, int _y){
+    g_ctx.engine_ptr->moveEvent(_x, _y);
+}
 
-void exit_callback(){
-    cout<<"exit_callback"<<endl;
+void engine_plot_start(){
+    g_ctx.plotit = g_ctx.engine_ptr->plot();
 }
-void gui_update_callback(){
-    cout<<"gui_update_callback"<<endl;
-}
-void auto_move_callback(){
-    cout<<"auto_move_callback"<<endl;
-}
+
+void engine_plot_done(){
     
-}//namespace
+}
+
+int engine_plot_end(){
+    
+}
+
+void engine_plot_next(){
+    
+}
+
+int engine_plot_x(){
+    return g_ctx.plotit.x();
+}
+
+int engine_plot_y(){
+    return g_ctx.plotit.y();
+}
+
+namespace{
+    inline int swift_color(uint32_t _c){
+        int r = _c & 0xff;
+        int g = (_c >> 8) & 0xff;
+        int b = (_c >> 16) & 0xff;
+        int v = (0xff000000 | (b << 0) | (g << 8) | (r << 16));
+        return v;
+    }
+}
+
+
+int engine_plot_color(){
+    return swift_color(g_ctx.plotit.rgbColor());
+}
+
+int engine_plot_my_color(){
+    return swift_color(g_ctx.plotit.myRgbColor());
+}

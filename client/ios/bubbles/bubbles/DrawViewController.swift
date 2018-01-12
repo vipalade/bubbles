@@ -9,6 +9,15 @@
 import UIKit
 import os.log
 
+
+func bridge(_ obj : T) -> UnsafeMutableRawPointer {
+    return UnsafeMutableRawPointer(Unmanaged.passUnretained(obj).toOpaque())
+}
+
+func bridge(_ ptr : UnsafeMutableRawPointer) -> T? {
+    return Unmanaged.fromOpaque(ptr).takeUnretainedValue()
+}
+
 class DrawViewController: UIViewController {
 
     @IBOutlet weak var drawView: DrawView!
@@ -41,12 +50,47 @@ class DrawViewController: UIViewController {
         let client_cert_txt: String! = try? String(contentsOfFile: client_cert_path, encoding: String.Encoding.utf8)
         let client_key_txt: String! = try? String(contentsOfFile: client_key_path, encoding: String.Encoding.utf8)
         os_log("DrawViewController:ca_cert %@ client_cert %@ client_key %@", log: OSLog.default, type: .debug, ca_cert_txt, client_cert_txt, client_key_txt)
-        let engine_rv = engine_start(host_name, room_name, secure ? 1:0, compress ? 1:0, auto_pilot ? 1:0, ca_cert_txt, client_cert_txt, client_key_txt)
+        
+        let engine_rv = engine_start(
+            host_name, room_name,
+            secure ? 1:0, compress ? 1:0, auto_pilot ? 1:0,
+            ca_cert_txt, client_cert_txt, client_key_txt,
+            bridge(self), {(observer) -> Void in
+                // Extract pointer to `self` from void pointer:
+                let mySelf = Unmanaged.fromOpaque(observer!).takeUnretainedValue()
+                // Call instance method:
+                mySelf.onEngineExit();
+            },
+            bridge(self), {(observer) -> Void in
+                // Extract pointer to `self` from void pointer:
+                let mySelf = Unmanaged.fromOpaque(observer!).takeUnretainedValue()
+                // Call instance method:
+                mySelf.onEngineGuiUpdate();
+            },
+            bridge(self), {(observer, x, y) -> Void in
+                // Extract pointer to `self` from void pointer:
+                let mySelf = Unmanaged.fromOpaque(observer!).takeUnretainedValue()
+                // Call instance method:
+                mySelf.onEngineAutoMove(x, y);
+            }
+        )
         os_log("DrawViewController: engine_start rv = %@", log: OSLog.default, type: .debug, engine_rv.description)
     }
     
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         drawView?.onLoad()
+    }
+    
+    func onEngineExit(){
+        //TODO:
+    }
+    
+    func onEngineGuiUpdate(){
+        drawView?.setNeedsDisplay()
+    }
+    
+    func onEngineAutoMove(x: Int32, y: Int32){
+        drawView?.autoMove(x, y)
     }
 }

@@ -26,7 +26,7 @@ public class BubblesActivity extends AppCompatActivity {
         setContentView(R.layout.activity_bubbles);
 
         Intent intent = getIntent();
-        String endpoint_str = intent.getStringExtra(MainActivity.EXTRA_MESSAGE);
+        String host_str = intent.getStringExtra(MainActivity.EXTRA_MESSAGE);
         String secure_str = intent.getStringExtra(MainActivity.EXTRA_SECURE);
         String compress_str = intent.getStringExtra(MainActivity.EXTRA_COMPRESS);
         String auto_str = intent.getStringExtra(MainActivity.EXTRA_AUTO);
@@ -47,7 +47,7 @@ public class BubblesActivity extends AppCompatActivity {
         bubblesView.setActivity(this);
 
 
-        if(nativeStart(endpoint_str, room_str, secure, compress, auto_pilot, authority_verify_str, client_cert_str, client_key_str)){
+        if(nativeStart(host_str, room_str, secure, compress, auto_pilot, authority_verify_str, client_cert_str, client_key_str)){
             Log.i("BubblesActivity", "Success starting native engine");
         }else{
             Log.e("BubblesActivity", "Error starting native engine");
