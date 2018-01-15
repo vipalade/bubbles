@@ -96,6 +96,8 @@ public class BubblesView extends View {
 
     void drawCircle(Canvas canvas, int x, int y, int c, int r){
         mCirclePaint.setColor(c);
+        int x = activity.nativeScaleX(x, this.getWidth());
+        int y = activity.nativeScaleY(y, this.getHeight());
         canvas.drawCircle(x, y, r, mCirclePaint);
     }
 
@@ -106,7 +108,7 @@ public class BubblesView extends View {
                         int oldw,
                         int oldh
     ){
-        activity.nativeSetFrame(w, h);
+        //activity.nativeSetFrame(w, h);
     }
 
     // BEGIN_INCLUDE(onTouchEvent)
@@ -124,8 +126,8 @@ public class BubblesView extends View {
 
             case MotionEvent.ACTION_DOWN: {
                 // first pressed gesture has started
-                int x = (int)(event.getX(0) - this.getWidth()/2);
-                int y = (int)(event.getY(0) - this.getHeight()/2);
+                int x = activity.nativeReverseScaleX((int)(event.getX(0) - this.getWidth()/2), this.getWidth());
+                int y = activity.nativeReverseScaleY((int)(event.getY(0) - this.getHeight()/2), this.getHeight());
                 activity.nativeMove(x, y);
                 mHasTouch = true;
                 setPointerPos(x, y);
@@ -159,8 +161,8 @@ public class BubblesView extends View {
                  * touches.
                  */
 
-                int x = (int)(event.getX(0) - this.getWidth()/2);
-                int y = (int)(event.getY(0) - this.getHeight()/2);
+                int x = activity.nativeReverseScaleX((int)(event.getX(0) - this.getWidth()/2), this.getWidth());
+                int y = activity.nativeReverseScaleY((int)(event.getY(0) - this.getHeight()/2), this.getHeight());
                 activity.nativeMove(x, y);
                 setPointerPos(x, y);
 
@@ -203,8 +205,8 @@ public class BubblesView extends View {
                  * This identifier is used to keep track of a pointer across
                  * events.
                  */
-                int x = (int)(event.getX(0) - this.getWidth()/2);
-                int y = (int)(event.getY(0) - this.getHeight()/2);
+                int x = activity.nativeReverseScaleX((int)(event.getX(0) - this.getWidth()/2), this.getWidth());
+                int y = activity.nativeReverseScaleY((int)(event.getY(0) - this.getHeight()/2), this.getHeight());
                 activity.nativeMove(x, y);
                 setPointerPos(x, y);
 

@@ -133,4 +133,8 @@ public class BubblesActivity extends AppCompatActivity {
     public native int nativePlotMyColor();
     public native void nativePlotDone();
     public native void nativePlotNext();
+    public native int nativeScaleX(int _x, int _w);
+    public native int nativeScaleY(int _y, int _h);
+    public native int nativeReverseScaleX(int _x, int _w);
+    public native int nativeReverseScaleY(int _y, int _h);
 }

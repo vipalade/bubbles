@@ -59,7 +59,12 @@ const EventCategory<Events> event_category{
         }
     }};
 
+
+
 struct Engine::Data{
+    static const int canvas_width = 7680;
+    static const int canvas_height = 7680;//use the 8K width
+    
     Data(
         solid::frame::ServiceT &_rsvc,
         solid::frame::mpipc::Service &_rmpipc,
@@ -68,9 +73,9 @@ struct Engine::Data{
     ):  rmpipc(_rmpipc), service(_rsvc), cfg(_cfg), push_eventq_idx(0), pop_eventq_idx(1),
         push_messagedq_idx(0), pop_messagedq_idx(1), read_plotdq_idx(0), write_plotdq_idx(1), read_plotdq_count(0),
         discarded_on_push(false), rgb_color(0), auto_pilot(false), timer(_proxy), auto_timer(_proxy),
-        auto_crt_w(1280/2), auto_crt_h(720/2), auto_mod_w(0), auto_mod_h(0), auto_frame_changed(false), auto_plot_done(true),
+        auto_crt_w(canvas_width/2), auto_crt_h(canvas_height/2), auto_mod_w(0), auto_mod_h(0), auto_frame_changed(false), auto_plot_done(true),
         auto_plot_idx(0), auto_fill_idx(1),
-        auto_dist_x(-(auto_crt_w/2), auto_crt_w/2), auto_dist_y(-(auto_crt_h/2), auto_crt_h/2),
+        auto_dist_x(-auto_crt_w, auto_crt_w), auto_dist_y(-auto_crt_h, auto_crt_h),
         auto_dist_steps(1, 100), paused(false)
     {
         auto_plot[0].first = 0;
@@ -239,6 +244,31 @@ solid::ErrorConditionT Engine::start(
     return err;
 }
 
+int Engine::canvasWidth()const{
+    return d.canvas_width;
+}
+
+int Engine::canvasHeight()const{
+    return d.canvas_height;
+}
+
+long Engine::scaleX(long _x, long _w)const{
+    return (((_x + d.canvas_width/2) * _w) / d.canvas_width) - _w/2;
+}
+
+long Engine::scaleY(long _y, long _h)const{
+    return (((_y + d.canvas_height/2) *_h) / d.canvas_height) - _h/2;
+}
+
+
+long Engine::reverseScaleX(long _x, long _w)const{
+    return (((_x + _w/2) * d.canvas_width) / _w) - d.canvas_width/2;
+}
+
+long Engine::reverseScaleY(long _y, long _h)const{
+    return (((_y + _h/2) * d.canvas_height) / _h) - d.canvas_height/2;
+}
+
 void Engine::pause(){
     d.paused = true;
     d.service.manager().notify(d.service.manager().id(*this), generic_event_category.event(GenericEvents::Pause));
@@ -370,8 +400,8 @@ void Engine::onAutoPilot(solid::frame::ReactorContext &_rctx){
         d.auto_crt_h = d.auto_mod_h;
     }
     if(frame_changed){
-        d.auto_dist_x = std::uniform_int_distribution<>(-(d.auto_crt_w/2), d.auto_crt_w/2);
-        d.auto_dist_y = std::uniform_int_distribution<>(-(d.auto_crt_h/2), d.auto_crt_h/2);
+        d.auto_dist_x = std::uniform_int_distribution<>(-(d.auto_crt_w), d.auto_crt_w);
+        d.auto_dist_y = std::uniform_int_distribution<>(-(d.auto_crt_h), d.auto_crt_h);
     }
     if(d.paused){
     }else if(d.auto_q.size()){
@@ -634,13 +664,6 @@ void Engine::doSetGuiUpdateFunction(GuiUpdateFunctionT &&_uf){
 }
 void Engine::doSetAutoUpdateFunction(AutoUpdateFunctionT &&_uf){
     d.auto_update_function = _uf;
-}
-
-void Engine::setFrame(int _w, int _h){
-    std::unique_lock<std::mutex>    lock(d.mtx);
-    d.auto_mod_w = _w;
-    d.auto_mod_h = _h;
-    d.auto_frame_changed = true;
 }
 
 void Engine::onMessage(

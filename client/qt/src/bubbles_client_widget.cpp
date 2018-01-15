@@ -72,23 +72,28 @@ void Widget::paintEvent(QPaintEvent *)
         split_color(plotit.rgbColor(), r, g, b);
         painter.setPen(QPen(QColor(r, g, b), 3));
         painter.setBrush(QBrush(QColor(r, g, b)));
-        painter.drawEllipse(QRect(plotit.x() - 10, plotit.y() - 10, 20, 20));
+        
+        //painter.drawEllipse(QRect(plotit.x() - 10, plotit.y() - 10, 20, 20));
+        painter.drawEllipse(QRect(engine_ptr->scaleX(plotit.x(), width()) - 10, engine_ptr->scaleY(plotit.y(), height()) - 10, 20, 20));
         ++plotit;
     }
 
     split_color(plotit.myRgbColor(), r, g, b);
     painter.setPen(QPen(QColor(r, g, b), 3));
     painter.setBrush(QBrush(QColor(r, g, b)));
-    painter.drawEllipse(QRect(pos.x() - 20, pos.y() - 20, 40, 40));
+    //painter.drawEllipse(QRect(pos.x() - 20, pos.y() - 20, 40, 40));
+    const long x = engine_ptr->scaleX(pos.x(), width());
+    const long y = engine_ptr->scaleY(pos.y(), height());
+    painter.drawEllipse(QRect(x - 20, y - 20, 40, 40));
     QString         t;
-    QTextStream(&t)<<pos.x()<<':'<<pos.y();
+    QTextStream(&t)<<pos.x()<<':'<<pos.y()<<" "<<x<<':'<<y;
     painter.drawText(QPoint(-(width()/2), height()/2), t);
 }
 
 void Widget::mousePressEvent(QMouseEvent *event){
     if (event->button() == Qt::LeftButton) {
         pos = event->pos();
-        pos = QPoint(pos.x() - width()/2, pos.y() - height()/2);
+        pos = QPoint(engine_ptr->reverseScaleX(pos.x() - width()/2, width()), engine_ptr->reverseScaleY(pos.y() - height()/2, height()));
         moving = true;
         update();
     }else if((event->button() == Qt::RightButton)){
@@ -99,7 +104,7 @@ void Widget::mousePressEvent(QMouseEvent *event){
 void Widget::mouseMoveEvent(QMouseEvent *event){
     if ((event->buttons() & Qt::LeftButton) && moving){
         pos = event->pos();
-        pos = QPoint(pos.x() - width()/2, pos.y() - height()/2);
+        pos = QPoint(engine_ptr->reverseScaleX(pos.x() - width()/2, width()), engine_ptr->reverseScaleY(pos.y() - height()/2, height()));
         engine_ptr->moveEvent(pos.x(), pos.y());
         update();
     }
@@ -108,7 +113,7 @@ void Widget::mouseMoveEvent(QMouseEvent *event){
 void Widget::mouseReleaseEvent(QMouseEvent *event){
     if ((event->button() == Qt::LeftButton) and moving) {
         pos = event->pos();
-        pos = QPoint(pos.x() - width()/2, pos.y() - height()/2);
+        pos = QPoint(engine_ptr->reverseScaleX(pos.x() - width()/2, width()), engine_ptr->reverseScaleY(pos.y() - height()/2, height()));
         moving = false;
         if(engine_ptr->autoPilot()){
             autoMoveEvent();
@@ -131,8 +136,8 @@ void Widget::autoMoveEvent(){
 }
 
 void Widget::resizeEvent(QResizeEvent *event){
-    QWidget::resizeEvent(event);
-    engine_ptr->setFrame(width(), height());
+    //QWidget::resizeEvent(event);
+    //engine_ptr->setFrame(width(), height());
 }
 
 }//namespace client

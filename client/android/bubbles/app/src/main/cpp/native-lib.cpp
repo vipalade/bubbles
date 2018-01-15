@@ -434,6 +434,38 @@ jboolean Java_com_example_vapa_bubbles_BubblesActivity_nativeSetFrame(
     return JNI_TRUE;
 }
 
+extern "C"
+jint Java_com_example_vapa_bubbles_BubblesActivity_nativeScaleX(
+        JNIEnv *env,
+        jobject _this, jint _x, jint _w){
+
+    return g_ctx.engine_ptr->scaleX(_x, _y);
+}
+
+extern "C"
+jint Java_com_example_vapa_bubbles_BubblesActivity_nativeScaleY(
+        JNIEnv *env,
+        jobject _this, jint _y, jint _h){
+
+    return g_ctx.engine_ptr->scaleY(_y, _h);
+}
+
+extern "C"
+jint Java_com_example_vapa_bubbles_BubblesActivity_nativeReverseScaleX(
+        JNIEnv *env,
+        jobject _this, jint _x, jint _w){
+
+    return g_ctx.engine_ptr->reverseScaleX(_x, _y);
+}
+
+extern "C"
+jint Java_com_example_vapa_bubbles_BubblesActivity_nativeReverseScaleY(
+        JNIEnv *env,
+        jobject _this, jint _y, jint _h){
+
+    return g_ctx.engine_ptr->reverseScaleY(_y, _h);
+}
+
 namespace{
     inline jint java_color(uint32_t _c){
         int r = _c & 0xff;

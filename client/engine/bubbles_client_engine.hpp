@@ -80,7 +80,16 @@ public:
         const bool _auto_pilot = false,
         uint32_t _rgb_color = 0
     );
-
+    
+    int canvasWidth()const;
+    int canvasHeight()const;
+    
+    long scaleX(long _x, long _w)const;
+    long scaleY(long _y, long _h)const;
+    
+    long reverseScaleX(long _x, long _w)const;
+    long reverseScaleY(long _y, long _h)const;
+    
     void pause();
     void resume();
 
@@ -103,8 +112,6 @@ public:
         AutoUpdateFunctionT f{_f};
         doSetAutoUpdateFunction(std::move(f));
     }
-
-    void setFrame(int _w, int _h);
 
     PlotIterator plot();
 
