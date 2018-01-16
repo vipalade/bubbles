@@ -25,15 +25,19 @@ So, every client will display in real time all the bubbles in a room at the posi
 |:---|
 |__Linux:__|
 |![Screenshot Linux](bubbles_linux.png)|
-|__macOS & Android Emulator:__|
+|__macOS & Android Emulator & iOS Simulator:__|
 |![Screenshot Linux](bubbles_macos.png)|
 
 #### Implementation
-The frontend is implemented using either Qt (for desktop clients) or Java for Android application.
+The frontend is implemented using either
+ * Qt (for desktop clients);
+ * Java for Android application;
+ * Swift for iOS application.
+
 The backend engine is implemented in C++ and relies on
  * **solid_frame** libraries (especially **solid_frame_mpipc** for communication)
- * **OpenSSL** (for desktop) / **BoringSSL** (for Android) - to secure the communication
- * **snappy** for both desktop and Android versions - to compress communication
+ * **OpenSSL** (for desktop) / **BoringSSL** (for Android and iOS) - to secure the communication
+ * **snappy** for all (Desktop Qt/Android/iOS) versions - to compress communication
 
 
 ### The server

@@ -425,21 +425,11 @@ jboolean Java_com_example_vapa_bubbles_BubblesActivity_nativeMove(
 }
 
 extern "C"
-jboolean Java_com_example_vapa_bubbles_BubblesActivity_nativeSetFrame(
-        JNIEnv *env,
-        jobject _this, jint _w, jint _h){
-
-    LOGI("setFrame %d,%d", (int)_w, (int)_h);
-    g_ctx.engine_ptr->setFrame(_w, _h);
-    return JNI_TRUE;
-}
-
-extern "C"
 jint Java_com_example_vapa_bubbles_BubblesActivity_nativeScaleX(
         JNIEnv *env,
         jobject _this, jint _x, jint _w){
 
-    return g_ctx.engine_ptr->scaleX(_x, _y);
+    return g_ctx.engine_ptr->scaleX(_x, _w);
 }
 
 extern "C"
@@ -455,7 +445,7 @@ jint Java_com_example_vapa_bubbles_BubblesActivity_nativeReverseScaleX(
         JNIEnv *env,
         jobject _this, jint _x, jint _w){
 
-    return g_ctx.engine_ptr->reverseScaleX(_x, _y);
+    return g_ctx.engine_ptr->reverseScaleX(_x, _w);
 }
 
 extern "C"

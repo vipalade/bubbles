@@ -10,16 +10,15 @@ import UIKit
 import os.log
 
 
-func bridge(_ obj : T) -> UnsafeMutableRawPointer {
-    return UnsafeMutableRawPointer(Unmanaged.passUnretained(obj).toOpaque())
+func bridge<T:AnyObject>(_ obj : T) -> UnsafeMutableRawPointer {
+    return UnsafeMutableRawPointer(Unmanaged<T>.passUnretained(obj).toOpaque())
 }
 
-func bridge(_ ptr : UnsafeMutableRawPointer) -> T? {
-    return Unmanaged.fromOpaque(ptr).takeUnretainedValue()
+func bridge<T:AnyObject>(_ ptr : UnsafeMutableRawPointer) -> T? {
+    return Unmanaged<T>.fromOpaque(ptr).takeUnretainedValue()
 }
 
 class DrawViewController: UIViewController {
-
     @IBOutlet weak var drawView: DrawView!
     
     var secure: Bool = false
@@ -56,22 +55,25 @@ class DrawViewController: UIViewController {
             secure ? 1:0, compress ? 1:0, auto_pilot ? 1:0,
             ca_cert_txt, client_cert_txt, client_key_txt,
             bridge(self), {(observer) -> Void in
+                os_log("DrawViewController: call onExit", log: OSLog.default, type: .debug)
                 // Extract pointer to `self` from void pointer:
-                let mySelf = Unmanaged.fromOpaque(observer!).takeUnretainedValue()
+                let mySelf = Unmanaged<DrawViewController>.fromOpaque(observer!).takeUnretainedValue()
                 // Call instance method:
                 mySelf.onEngineExit();
             },
             bridge(self), {(observer) -> Void in
+                //os_log("DrawViewController: call onEngineUpdate", log: OSLog.default, type: .debug)
                 // Extract pointer to `self` from void pointer:
-                let mySelf = Unmanaged.fromOpaque(observer!).takeUnretainedValue()
+                let mySelf = Unmanaged<DrawViewController>.fromOpaque(observer!).takeUnretainedValue()
                 // Call instance method:
                 mySelf.onEngineGuiUpdate();
             },
             bridge(self), {(observer, x, y) -> Void in
                 // Extract pointer to `self` from void pointer:
-                let mySelf = Unmanaged.fromOpaque(observer!).takeUnretainedValue()
+                //os_log("DrawViewController: call onAutoMove", log: OSLog.default, type: .debug)
+                let mySelf = Unmanaged<DrawViewController>.fromOpaque(observer!).takeUnretainedValue()
                 // Call instance method:
-                mySelf.onEngineAutoMove(x, y);
+                mySelf.onEngineAutoMove(x:x, y:y);
             }
         )
         os_log("DrawViewController: engine_start rv = %@", log: OSLog.default, type: .debug, engine_rv.description)
@@ -79,7 +81,7 @@ class DrawViewController: UIViewController {
     
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
-        drawView?.onLoad()
+        drawView.onLoad()
     }
     
     func onEngineExit(){
@@ -87,10 +89,10 @@ class DrawViewController: UIViewController {
     }
     
     func onEngineGuiUpdate(){
-        drawView?.setNeedsDisplay()
+        drawView?.updateGUI()
     }
     
     func onEngineAutoMove(x: Int32, y: Int32){
-        drawView?.autoMove(x, y)
+        drawView?.autoMove(x:x, y:y)
     }
 }

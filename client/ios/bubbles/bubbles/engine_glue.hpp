@@ -44,6 +44,12 @@ extern "C"{
     int engine_plot_y();
     int engine_plot_color();
     int engine_plot_my_color();
+    
+    int engine_scale_x(int _x, int _w);
+    int engine_scale_y(int _y, int _h);
+    
+    int engine_reverse_scale_x(int _x, int _w);
+    int engine_reverse_scale_y(int _y, int _h);
 #ifdef __cplusplus
 }
 #endif

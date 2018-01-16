@@ -96,9 +96,9 @@ public class BubblesView extends View {
 
     void drawCircle(Canvas canvas, int x, int y, int c, int r){
         mCirclePaint.setColor(c);
-        int x = activity.nativeScaleX(x, this.getWidth());
-        int y = activity.nativeScaleY(y, this.getHeight());
-        canvas.drawCircle(x, y, r, mCirclePaint);
+        int nx = activity.nativeScaleX(x, this.getWidth());
+        int ny = activity.nativeScaleY(y, this.getHeight());
+        canvas.drawCircle(nx, ny, r, mCirclePaint);
     }
 
     @Override

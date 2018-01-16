@@ -123,7 +123,6 @@ public class BubblesActivity extends AppCompatActivity {
     public native boolean nativeResume();
 
     public native void nativeMove(int _x, int _y);
-    public native void nativeSetFrame(int _w, int _h);
 
     public native void nativePlotStart();
     public native boolean nativePlotEnd();

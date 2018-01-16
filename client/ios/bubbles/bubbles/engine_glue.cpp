@@ -197,13 +197,16 @@ int engine_start(
 #ifdef SOLID_HAS_DEBUG
     {
         string dbgout;
-        Debug::the().levelMask("view");
-        Debug::the().moduleMask("all");
+        Debug::the().levelMask("ew");
+        Debug::the().moduleMask("any");
         Debug::the().initStdErr("false", &dbgout);
         dbgout.clear();
     }
 #endif
-
+    
+    g_ctx.endpoint = _host;
+    g_ctx.room_name = _room;
+    
     string verify_authority_str{_ssl_verify_authority};
     string client_cert_str{_ssl_client_cert};
     string client_key_str{_ssl_client_key};
@@ -221,21 +224,21 @@ int engine_start(
     err = g_ctx.sch.start(thr_enter, thr_exit, 1);
     
     if(err){
-        cout<<"Error starting aio scheduler: "<<err.message()<<endl;
+        edbg("Error starting aio scheduler: "<<err.message());
         return -1;
     }
     
     err = g_ctx.aio_sch.start(1);
     
     if(err){
-        cout<<"Error starting aio scheduler: "<<err.message()<<endl;
+        edbg("Error starting aio scheduler: "<<err.message());
         return -1;
     }
     
     err = g_ctx.resolver.start(1);
     
     if(err){
-        cout<<"Error starting aio resolver: "<<err.message()<<endl;
+        edbg("Error starting aio resolver: "<<err.message());
         return -1;
     }
     
@@ -253,11 +256,11 @@ int engine_start(
         
         {
             auto connection_stop_lambda = [](frame::mpipc::ConnectionContext &_ctx){
-                cout<<"connection stop"<<endl;
+                edbg("connection stop");
                 g_ctx.engine_ptr->onConnectionStop(_ctx);
             };
             auto connection_start_lambda = [](frame::mpipc::ConnectionContext &_ctx){
-                cout<<"connection start"<<endl;
+                edbg("connection start");
                 g_ctx.engine_ptr->onConnectionStart(_ctx);
             };
             cfg.connection_stop_fnc = connection_stop_lambda;
@@ -286,7 +289,7 @@ int engine_start(
         err = g_ctx.ipcsvc.reconfigure(std::move(cfg));
         
         if(err){
-            cout<<"Error starting ipcservice: "<<err.message()<<endl;
+            edbg("Error starting ipcservice: "<<err.message());
             return -1;
         }
     }
@@ -297,11 +300,14 @@ int engine_start(
             _exit_fnc(_pexit_data);
         };
         auto update_closure = [_pupdate_data, _update_fnc](){
+            idbg("");
             _update_fnc(_pupdate_data);
         };
         auto auto_closure = [_pauto_data, _auto_fnc](){
+
             int x,y;
             g_ctx.engine_ptr->getAutoPosition(x, y);
+            idbg("x = "<<x<<" y = "<<y);
             _auto_fnc(_pauto_data, x, y);
         };
         
@@ -310,15 +316,15 @@ int engine_start(
         g_ctx.engine_ptr->setGuiUpdateFunction(update_closure);
         
     }
-    
+    idbg("starting engine for host: "<<g_ctx.endpoint<<" room: "<<g_ctx.room_name<<" auto_pilot: "<<_auto_pilot);
     err = g_ctx.engine_ptr->start(g_ctx.sch, g_ctx.endpoint, g_ctx.room_name, _auto_pilot == 1);
     
     if(err){
-        cout<<"Error starting engine: "<<err.message()<<endl;
+        edbg("Error starting engine: "<<err.message());
         return -1;
     }
     g_ctx.started = true;
-    cout<<"Engine started"<<endl;
+    idbg("Engine started");
     return 0;
 }
 
@@ -331,15 +337,15 @@ void engine_plot_start(){
 }
 
 void engine_plot_done(){
-    
+    g_ctx.plotit.clear();
 }
 
 int engine_plot_end(){
-    
+    return g_ctx.plotit.end() ? 1 : 0;
 }
 
 void engine_plot_next(){
-    
+    ++g_ctx.plotit;
 }
 
 int engine_plot_x(){
@@ -367,4 +373,20 @@ int engine_plot_color(){
 
 int engine_plot_my_color(){
     return swift_color(g_ctx.plotit.myRgbColor());
+}
+
+int engine_scale_x(int _x, int _w){
+    return g_ctx.engine_ptr->scaleX(_x, _w);
+}
+
+int engine_scale_y(int _y, int _h){
+    return g_ctx.engine_ptr->scaleY(_y, _h);
+}
+
+int engine_reverse_scale_x(int _x, int _w){
+    return g_ctx.engine_ptr->reverseScaleX(_x, _w);
+}
+
+int engine_reverse_scale_y(int _y, int _h){
+    return g_ctx.engine_ptr->reverseScaleY(_y, _h);
 }
