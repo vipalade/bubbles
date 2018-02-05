@@ -2,7 +2,8 @@
 
 Exemplifies how to use SolidFrame mpipc library in a secured (SSL) client-server scenario.
 
-[client/android](client/android) is an example of how to use SolidFrame framework and especially the solid::frame::mpipc library allong with BoringSSL in an Android application.
+[client/android](client/android) is an example of how to use SolidFrame framework and especially the solid::frame::mpipc library allong with BoringSSL and Snappy in an Android Java application.
+[client/ios](client/ios) is and example of how to use SolidFrame allong with BoringSSL and Snappy as CocoaPods in an iOS Swift application.
 
 ## Insight
 
