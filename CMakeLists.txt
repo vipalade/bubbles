@@ -5,7 +5,7 @@ cmake_minimum_required(VERSION 2.8)
 #-----------------------------------------------------------------
 project (bubbles)
 
-set(EXTERN_PATH "" CACHE PATH "External dependencies folder")
+set(EXTERN_PATH "" CACHE PATH "External dependencies folder")#TODO rename to EXTERNAL_PATH
 
 if (CMAKE_VERSION VERSION_LESS "3.1")
     set (CMAKE_CXX_FLAGS "--std=c++11 ${CMAKE_CXX_FLAGS}")
