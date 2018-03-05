@@ -49,28 +49,27 @@ struct Parameters{
 namespace bubbles{
 namespace server{
 
-template <typename T>
-struct MessageSetup;
-
-template <typename M>
-struct MessageSetup{
+struct MessageSetup {
     Engine &engine;
 
     MessageSetup(Engine &_engine):engine(_engine){}
-
-    void operator()(frame::mpipc::serialization_v1::Protocol &_rprotocol, const size_t _protocol_idx, const size_t _message_idx){
+    
+    template <typename T>
+    void operator()(bubbles::ProtocolT& _rprotocol, TypeToType<T> _t2t, const bubbles::ProtocolT::TypeIdT& _rtid)
+    {
         Engine &eng = engine;
         auto lambda = [&eng](
             frame::mpipc::ConnectionContext &_rctx,
-            std::shared_ptr<M> &_rsent_msg_ptr,
-            std::shared_ptr<M> &_rrecv_msg_ptr,
+            std::shared_ptr<T> &_rsent_msg_ptr,
+            std::shared_ptr<T> &_rrecv_msg_ptr,
             ErrorConditionT const &_rerror
         ){
             eng.onMessage(_rctx, _rsent_msg_ptr, _rrecv_msg_ptr, _rerror);
         };
-        _rprotocol.registerType<M>(lambda, _protocol_idx, _message_idx);
+        _rprotocol.registerMessage<T>(lambda, _rtid);
     }
 };
+
 
 }//namespace server
 }//namespace bubbles
@@ -141,10 +140,14 @@ int main(int argc, char *argv[]){
         }
 
         {
-            auto                        proto = frame::mpipc::serialization_v1::Protocol::create(serialization::binary::Limits(256, 128, 0));//small limits by default
+            auto                        proto = bubbles::ProtocolT::create();
             frame::mpipc::Configuration cfg(scheduler, proto);
 
-            bubbles::ProtoSpecT::setup<bubbles::server::MessageSetup>(*proto, 0, std::ref(engine));
+            bubbles::protocol_setup(bubbles::server::MessageSetup(std::ref(engine)), *proto);
+            
+            cfg.limitString(256);
+            cfg.limitContainer(256);
+            cfg.limitStream(0);
             
             cfg.connection_inactivity_timeout_seconds = 60;
 
@@ -161,8 +164,8 @@ int main(int argc, char *argv[]){
                 auto connection_start_lambda = [&engine](frame::mpipc::ConnectionContext &_ctx){
                     engine.onConnectionStart(_ctx);
                 };
-                cfg.connection_stop_fnc = connection_stop_lambda;
-                cfg.server.connection_start_fnc = connection_start_lambda;
+                cfg.connection_stop_fnc = std::move(connection_stop_lambda);
+                cfg.server.connection_start_fnc = std::move(connection_start_lambda);
             }
 
             if(p.secure){

@@ -40,7 +40,7 @@ add_dependencies(bubbles_server bubbles_server_certs build_snappy)
 target_link_libraries (bubbles_server
     solid_frame_mpipc
     solid_frame_aio_openssl
-    solid_serialization
+    solid_serialization_v2
     boost_program_options
     boost_system
     ${SNAPPY_LIB}
