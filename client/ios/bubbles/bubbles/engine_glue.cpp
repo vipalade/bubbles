@@ -24,7 +24,7 @@
 
 #include "solid/frame/mpipc/mpipcservice.hpp"
 #include "solid/frame/mpipc/mpipcconfiguration.hpp"
-#include "solid/frame/mpipc/mpipcprotocol_serialization_v1.hpp"
+#include "solid/frame/mpipc/mpipcprotocol_serialization_v2.hpp"
 #include "solid/frame/mpipc/mpipcsocketstub_openssl.hpp"
 #include "solid/frame/mpipc/mpipccompression_snappy.hpp"
 
@@ -220,7 +220,7 @@ int engine_start(
         auto                        proto = bubbles::ProtocolT::create();//small limits by default
         frame::mpipc::Configuration cfg(g_ctx.aio_sch, proto);
         
-        bubbles::protocol_setup(bubbles::client::MessageSetup(std::ref(*engine_ptr)), *proto);
+        bubbles::protocol_setup(bubbles::client::MessageSetup(std::ref(*g_ctx.engine_ptr)), *proto);
         
         cfg.client.name_resolve_fnc = frame::mpipc::InternetResolverF(g_ctx.resolver, "4444");
         
