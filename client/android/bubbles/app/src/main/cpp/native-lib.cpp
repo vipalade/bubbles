@@ -19,7 +19,7 @@
 
 #include "solid/frame/mpipc/mpipcservice.hpp"
 #include "solid/frame/mpipc/mpipcconfiguration.hpp"
-#include "solid/frame/mpipc/mpipcprotocol_serialization_v1.hpp"
+#include "solid/frame/mpipc/mpipcprotocol_serialization_v2.hpp"
 #include "solid/frame/mpipc/mpipcsocketstub_openssl.hpp"
 #include "solid/frame/mpipc/mpipccompression_snappy.hpp"
 
@@ -90,7 +90,7 @@ namespace {
 namespace bubbles{
     namespace client{
 
-                struct MessageSetup {
+        struct MessageSetup {
             Engine &engine;
 
             MessageSetup(Engine &_engine):engine(_engine){}
@@ -275,7 +275,7 @@ jboolean Java_com_example_vapa_bubbles_BubblesActivity_nativeStart(
         g_ctx.vm->DetachCurrentThread();
     };
 
-    err = g_ctx.sch.start(thr_enter, thr_exit, 1);
+    err = g_ctx.sch.start(std::move(thr_enter), std::move(thr_exit), 1);
 
     if(err){
         //cout<<"Error starting aio scheduler: "<<err.message()<<endl;
@@ -303,7 +303,7 @@ jboolean Java_com_example_vapa_bubbles_BubblesActivity_nativeStart(
         auto                        proto = bubbles::ProtocolT::create();//small limits by default
         frame::mpipc::Configuration cfg(g_ctx.aio_sch, proto);
 
-        bubbles::protocol_setup(bubbles::client::MessageSetup(std::ref(*engine_ptr)), *proto);
+        bubbles::protocol_setup(bubbles::client::MessageSetup(std::ref(*g_ctx.engine_ptr)), *proto);
 
         cfg.client.name_resolve_fnc = frame::mpipc::InternetResolverF(g_ctx.resolver, "4444");
 

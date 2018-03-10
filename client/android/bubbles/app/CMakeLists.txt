@@ -125,7 +125,7 @@ target_link_libraries( # Specifies the target library.
         solid_frame_aio
         solid_frame_aio_openssl
         solid_frame
-        solid_serialization
+        solid_serialization_v2
         solid_utility
         solid_system
         ${NATIVE_SNAPPY_LIB}
