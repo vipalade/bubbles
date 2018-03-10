@@ -72,16 +72,13 @@ struct Parameters{
 namespace bubbles{
 namespace client{
 
-template <typename T>
-struct MessageSetup;
-
-template<>
-struct MessageSetup<RegisterRequest>{
+struct MessageSetup {
     Engine &engine;
 
     MessageSetup(Engine &_engine):engine(_engine){}
-
-    void operator()(frame::mpipc::serialization_v1::Protocol &_rprotocol, const size_t _protocol_idx, const size_t _message_idx){
+    
+    void operator()(bubbles::ProtocolT& _rprotocol, TypeToType<RegisterRequest> _t2t, const bubbles::ProtocolT::TypeIdT& _rtid)
+    {
         Engine &eng = engine;
         auto lambda = [&eng](
             frame::mpipc::ConnectionContext &_rctx,
@@ -91,17 +88,11 @@ struct MessageSetup<RegisterRequest>{
         ){
             eng.onMessage(_rctx, _rsent_msg_ptr, _rrecv_msg_ptr, _rerror);
         };
-        _rprotocol.registerType<RegisterRequest>(lambda, _protocol_idx, _message_idx);
+        _rprotocol.registerMessage<RegisterRequest>(lambda, _rtid);
     }
-};
-
-template<>
-struct MessageSetup<RegisterResponse>{
-    Engine &engine;
-
-    MessageSetup(Engine &_engine):engine(_engine){}
-
-    void operator()(frame::mpipc::serialization_v1::Protocol &_rprotocol, const size_t _protocol_idx, const size_t _message_idx){
+    
+    void operator()(bubbles::ProtocolT& _rprotocol, TypeToType<RegisterResponse> _t2t, const bubbles::ProtocolT::TypeIdT& _rtid)
+    {
         Engine &eng = engine;
         auto lambda = [&eng](
             frame::mpipc::ConnectionContext &_rctx,
@@ -111,17 +102,11 @@ struct MessageSetup<RegisterResponse>{
         ){
             eng.onMessage(_rctx, _rsent_msg_ptr, _rrecv_msg_ptr, _rerror);
         };
-        _rprotocol.registerType<RegisterResponse>(lambda, _protocol_idx, _message_idx);
+        _rprotocol.registerMessage<RegisterResponse>(lambda, _rtid);
     }
-};
-
-template<>
-struct MessageSetup<EventsNotificationRequest>{
-    Engine &engine;
-
-    MessageSetup(Engine &_engine):engine(_engine){}
-
-    void operator()(frame::mpipc::serialization_v1::Protocol &_rprotocol, const size_t _protocol_idx, const size_t _message_idx){
+    
+    void operator()(bubbles::ProtocolT& _rprotocol, TypeToType<EventsNotificationRequest> _t2t, const bubbles::ProtocolT::TypeIdT& _rtid)
+    {
         Engine &eng = engine;
         auto lambda = [&eng](
             frame::mpipc::ConnectionContext &_rctx,
@@ -131,17 +116,11 @@ struct MessageSetup<EventsNotificationRequest>{
         ){
             eng.onMessage(_rctx, _rsent_msg_ptr, _rrecv_msg_ptr, _rerror);
         };
-        _rprotocol.registerType<EventsNotificationRequest>(lambda, _protocol_idx, _message_idx);
+        _rprotocol.registerMessage<EventsNotificationRequest>(lambda, _rtid);
     }
-};
-
-template<>
-struct MessageSetup<EventsNotificationResponse>{
-    Engine &engine;
-
-    MessageSetup(Engine &_engine):engine(_engine){}
-
-    void operator()(frame::mpipc::serialization_v1::Protocol &_rprotocol, const size_t _protocol_idx, const size_t _message_idx){
+    
+    void operator()(bubbles::ProtocolT& _rprotocol, TypeToType<EventsNotificationResponse> _t2t, const bubbles::ProtocolT::TypeIdT& _rtid)
+    {
         Engine &eng = engine;
         auto lambda = [&eng](
             frame::mpipc::ConnectionContext &_rctx,
@@ -151,27 +130,22 @@ struct MessageSetup<EventsNotificationResponse>{
         ){
             eng.onMessage(_rctx, _rsent_msg_ptr, _rrecv_msg_ptr, _rerror);
         };
-        _rprotocol.registerType<EventsNotificationResponse>(lambda, _protocol_idx, _message_idx);
+        _rprotocol.registerMessage<EventsNotificationResponse>(lambda, _rtid);
     }
-};
-
-template <typename M>
-struct MessageSetup{
-    Engine &engine;
-
-    MessageSetup(Engine &_engine):engine(_engine){}
-
-    void operator()(frame::mpipc::serialization_v1::Protocol &_rprotocol, const size_t _protocol_idx, const size_t _message_idx){
+    
+    template <typename T>
+    void operator()(bubbles::ProtocolT& _rprotocol, TypeToType<T> _t2t, const bubbles::ProtocolT::TypeIdT& _rtid)
+    {
         Engine &eng = engine;
         auto lambda = [&eng](
             frame::mpipc::ConnectionContext &_rctx,
-            std::shared_ptr<M> &_rsent_msg_ptr,
-            std::shared_ptr<M> &_rrecv_msg_ptr,
+            std::shared_ptr<T> &_rsent_msg_ptr,
+            std::shared_ptr<T> &_rrecv_msg_ptr,
             ErrorConditionT const &_rerror
         ){
             eng.onMessage(_rctx, _rsent_msg_ptr, _rrecv_msg_ptr, _rerror);
         };
-        _rprotocol.registerType<M>(lambda, _protocol_idx, _message_idx);
+        _rprotocol.registerMessage<T>(lambda, _rtid);
     }
 };
 
@@ -267,11 +241,15 @@ int main(int argc, char *argv[]){
     }
 
     {
-        auto                        proto = frame::mpipc::serialization_v1::Protocol::create(serialization::binary::Limits(256, 128, 0));//small limits by default
+        auto                        proto = bubbles::ProtocolT::create();//small limits by default
         frame::mpipc::Configuration cfg(aioscheduler, proto);
 
-        bubbles::ProtoSpecT::setup<bubbles::client::MessageSetup>(*proto, 0, std::ref(*engine_ptr));
-
+        bubbles::protocol_setup(bubbles::client::MessageSetup(std::ref(*engine_ptr)), *proto);
+        
+        cfg.limitString(256);
+        cfg.limitContainer(256);
+        cfg.limitStream(0);
+        
         cfg.client.name_resolve_fnc = frame::mpipc::InternetResolverF(resolver, p.connect_port.c_str());
 
         cfg.client.connection_start_state = frame::mpipc::ConnectionState::Passive;
@@ -285,8 +263,8 @@ int main(int argc, char *argv[]){
             auto connection_start_lambda = [engine_ptr](frame::mpipc::ConnectionContext &_ctx){
                 engine_ptr->onConnectionStart(_ctx);
             };
-            cfg.connection_stop_fnc = connection_stop_lambda;
-            cfg.client.connection_start_fnc = connection_start_lambda;
+            cfg.connection_stop_fnc = std::move(connection_stop_lambda);
+            cfg.client.connection_start_fnc = std::move(connection_start_lambda);
         }
 
         if(p.secure){

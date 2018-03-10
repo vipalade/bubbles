@@ -63,7 +63,7 @@ if(${Qt5Widgets_FOUND})
         bubbles_client_engine
         solid_frame_mpipc
         solid_frame_aio_openssl
-        solid_serialization
+        solid_serialization_v2
         boost_program_options
         boost_system
         Qt5::Widgets

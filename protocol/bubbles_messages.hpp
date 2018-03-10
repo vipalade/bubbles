@@ -3,7 +3,7 @@
 
 #include "solid/frame/mpipc/mpipcmessage.hpp"
 #include "solid/frame/mpipc/mpipccontext.hpp"
-#include "solid/frame/mpipc/mpipcprotocol_serialization_v1.hpp"
+#include "solid/frame/mpipc/mpipcprotocol_serialization_v2.hpp"
 
 #include <vector>
 #include <deque>
@@ -21,9 +21,8 @@ struct RegisterRequest: solid::frame::mpipc::Message{
         uint32_t _rgb_color
     ): room_name(_rroom_name), rgb_color(_rgb_color){}
 
-    template <class S>
-    void solidSerialize(S &_s, solid::frame::mpipc::ConnectionContext &_rctx){
-        _s.push(room_name, "room_name").push(rgb_color, "rgb_color");
+    SOLID_PROTOCOL_V2(_s, _rthis, _rctx, _name){
+        _s.add(_rthis.room_name, _rctx, "room_name").add(_rthis.rgb_color, _rctx, "rgb_color");
     }
 };
 
@@ -46,9 +45,8 @@ struct RegisterResponse: solid::frame::mpipc::Message{
         return error == 0;
     }
 
-    template <class S>
-    void solidSerialize(S &_s, solid::frame::mpipc::ConnectionContext &_rctx){
-        _s.push(error, "error").push(rgb_color, "rgb_color").push(message, "message");
+    SOLID_PROTOCOL_V2(_s, _rthis, _rctx, _name){
+        _s.add(_rthis.error, _rctx, "error").add(_rthis.rgb_color, _rctx, "rgb_color").add(_rthis.message, _rctx, "message");
     }
 };
 
@@ -70,9 +68,9 @@ struct ConnectionId{
         connection_idx = solid::InvalidIndex();
     }
 
-    template <class S>
-    void solidSerialize(S &_s, solid::frame::mpipc::ConnectionContext &_rctx){
-        _s.push(server_idx, "server_idx").push(server_unq, "server_unq").push(connection_idx, "connection_idx").push(connection_unq, "connection_unq");
+    SOLID_PROTOCOL_V2(_s, _rthis, _rctx, _name){
+        _s.add(_rthis.server_idx, _rctx, "server_idx").add(_rthis.server_unq, _rctx, "server_unq");
+        _s.add(_rthis.connection_idx, _rctx, "connection_idx").add(_rthis.connection_unq, _rctx, "connection_unq");
     }
 };
 
@@ -93,9 +91,11 @@ struct Event{
         data = 0;
     }
 
-    template <class S>
-    void solidSerialize(S &_s, solid::frame::mpipc::ConnectionContext &_rctx){
-        _s.push(diff_time_msec, "diff_time_msec").push(data, "data").push(y, "y").push(x, "x").push(flags, "flags").push(type, "type");
+    SOLID_PROTOCOL_V2(_s, _rthis, _rctx, _name){
+        _s.add(_rthis.type, _rctx, "type").add(_rthis.flags, _rctx, "flags");
+        _s.add(_rthis.x, _rctx, "x").add(_rthis.y, _rctx, "y");
+        _s.add(_rthis.data, _rctx, "data").add(_rthis.diff_time_msec, _rctx, "diff_time_msec");
+        
     }
 
     uint16_t    type;
@@ -128,10 +128,12 @@ struct EventStub{
         events.clear();
     }
 
-    template <class S>
-    void solidSerialize(S &_s, solid::frame::mpipc::ConnectionContext &_rctx){
-        _s.pushContainer(events, "events");
-        _s.push(text, "text").push(event, "event").push(sender_rgb_color, "sender_rgb_color").push(connection_id, "connection_id");
+    SOLID_PROTOCOL_V2(_s, _rthis, _rctx, _name){
+        _s.add(_rthis.event, _rctx, "event");
+        _s.add(_rthis.connection_id, _rctx, "connection_id");
+        _s.add(_rthis.sender_rgb_color, _rctx, "sender_rgb_color");
+        _s.add(_rthis.text, _rctx, "text");
+        _s.add(_rthis.events, _rctx, "events");
     }
 };
 
@@ -155,15 +157,15 @@ struct EventsNotification: solid::frame::mpipc::Message{
         event_stub.clear();
     }
 
-    template <class S>
-    void solidSerialize(S &_s, solid::frame::mpipc::ConnectionContext &_rctx){
-        _s.pushContainerLimit();//back to default
-        _s.pushStringLimit();//back to default
-
-        _s.push(event_stub, "event_stub").pushContainer(event_stubs, "event_stubs");
-
-        _s.pushContainerLimit(1024);
-        _s.pushStringLimit(1024);
+    SOLID_PROTOCOL_V2(_s, _rthis, _rctx, _name){
+        const size_t limit_container = _s.limits().container();
+        const size_t limit_string = _s.limits().string();
+        
+        _s.limitContainer(1024, _name);
+        _s.limitString(1024, _name);
+        _s.add(_rthis.event_stub, _rctx, "event_stub").add(_rthis.event_stubs, _rctx, "event_stubs");
+        _s.limitContainer(limit_container, _name);
+        _s.limitString(limit_string, _name);
     }
 };
 
@@ -188,16 +190,28 @@ struct EventsNotificationResponse: solid::frame::mpipc::Message{
     ):  solid::frame::mpipc::Message(_req), error(_error),
         success_count(_success_count), fail_count(_fail_count), message(_rmsg){}
 
-    template <class S>
-    void solidSerialize(S &_s, solid::frame::mpipc::ConnectionContext &_rctx){
-        _s.push(message, "message").push(fail_count, "fail_count").push(success_count, "success_count").push(error, "error");
+    SOLID_PROTOCOL_V2(_s, _rthis, _rctx, _name){
+        _s.add(_rthis.error, _rctx, "error");
+        _s.add(_rthis.success_count, _rctx, "success_count");
+        _s.add(_rthis.fail_count, _rctx, "fail_count");
+        _s.add(_rthis.message, _rctx, "message");
     }
 };
 
-using ProtoSpecT = solid::frame::mpipc::serialization_v1::ProtoSpec<
-    0, RegisterRequest, RegisterResponse, EventsNotification,
-    EventsNotificationRequest, EventsNotificationResponse
->;
+using ProtocolT = solid::frame::mpipc::serialization_v2::Protocol<uint8_t>;
+
+template <class R>
+inline void protocol_setup(R _r, ProtocolT& _rproto)
+{
+    _rproto.null(static_cast<ProtocolT::TypeIdT>(0));
+
+    _r(_rproto, solid::TypeToType<RegisterRequest>(), 1);
+    _r(_rproto, solid::TypeToType<RegisterResponse>(), 2);
+    _r(_rproto, solid::TypeToType<EventsNotification>(), 3);
+    _r(_rproto, solid::TypeToType<EventsNotificationRequest>(), 4);
+    _r(_rproto, solid::TypeToType<EventsNotificationResponse>(), 5);
+}
+
 
 }//namespace bubbles
 
