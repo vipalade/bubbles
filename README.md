@@ -162,7 +162,7 @@ $ make
 On Windows 10 and Visual Studio 2017:
 
 ```bash
-$ cmake -DCMAKE_BUILD_TYPE=debug -DEXTERN_PATH=~/home/external -DSolidFrame_DIR=~/home/solidframe/build/vsmnt64/ -DQt5Widgets_DIR=/c/qt/5.10.1/msvc2017_64/lib/cmake/Qt5Widgets -G "Visual Studio 15 2017 Win64" ../../
+$ cmake -DCMAKE_BUILD_TYPE=debug -DEXTERN_PATH=~/work/external -DSolidFrame_DIR=~/work/solidframe/build/vsmnt64/ -DQt5Widgets_DIR=/c/qt/5.10.1/msvc2017_64/lib/cmake/Qt5Widgets -G "Visual Studio 15 2017 Win64" ../../
 ```
 
 run the client with secure communication:

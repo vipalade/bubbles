@@ -37,11 +37,25 @@ add_custom_target(bubbles_client_certs
     ${CMAKE_CURRENT_BINARY_DIR}/bubbles-client-cert.pem
 )
 
+set(BOOST_ROOT "${EXTERNAL_PATH}")
+set(Boost_USE_STATIC_LIBS ON)
+set(Boost_USE_MULTITHREADED ON)
+set(Boost_USE_STATIC_RUNTIME ON)
+
+find_package(Boost
+    COMPONENTS
+        system
+        filesystem
+        date_time
+        program_options
+        serialization
+)
+
 
 list(APPEND CMAKE_PREFIX_PATH "${EXTERN_PATH}")
 find_package(Qt5Widgets)
 
-if(${Qt5Widgets_FOUND})
+if(${Qt5Widgets_FOUND} AND ${Boost_FOUND})
     set(
         src_basic_gui
         src/bubbles_client_main.cpp
@@ -64,8 +78,8 @@ if(${Qt5Widgets_FOUND})
         solid_frame_mpipc
         solid_frame_aio_openssl
         solid_serialization_v2
-        boost_program_options
-        boost_system
+        ${Boost_PROGRAM_OPTIONS_LIBRARY}
+        ${Boost_SYSTEM_LIBRARY}
         Qt5::Widgets
         ${SNAPPY_LIB}
         ${SYS_BASIC_LIBS}

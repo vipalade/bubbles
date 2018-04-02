@@ -111,7 +111,7 @@ void Widget::mouseMoveEvent(QMouseEvent *event){
 }
 
 void Widget::mouseReleaseEvent(QMouseEvent *event){
-    if ((event->button() == Qt::LeftButton) and moving) {
+    if ((event->button() == Qt::LeftButton) && moving) {
         pos = event->pos();
         pos = QPoint(engine_ptr->reverseScaleX(pos.x() - width()/2, width()), engine_ptr->reverseScaleY(pos.y() - height()/2, height()));
         moving = false;

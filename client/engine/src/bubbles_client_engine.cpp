@@ -232,7 +232,7 @@ solid::ErrorConditionT Engine::start(
     idbg("");
     solid::ErrorConditionT                  err;
 
-    if(not this->isRunning()){
+    if(!this->isRunning()){
         solid::DynamicPointer<frame::Object>    objptr(this);//its save - pointer count is kept by this pointer
         d.server_endpoint = _server_endpoint;
         d.room_name = _room_name;
@@ -329,7 +329,7 @@ void Engine::onEvent(frame::ReactorContext &_rctx, solid::Event &&_uevent) /*ove
     }else if(generic_event_category.event(GenericEvents::Stop) == _uevent){
         d.exit_function();
     }else if(generic_event_category.event(GenericEvents::Update) == _uevent){
-        if(not d.paused){
+        if(!d.paused){
             d.gui_update_function();
         }
     }else if(generic_event_category.event(GenericEvents::Pause) == _uevent){
@@ -365,7 +365,7 @@ void Engine::doResume(solid::frame::ReactorContext &_rctx){
 }
 
 void Engine::doHandleConnectionStop(solid::frame::ReactorContext &_rctx){
-    if(d.events_message_ptr and not d.paused){
+    if(d.events_message_ptr && !d.paused){
         idbg("");
         //connection stopped and there is no activity to send, resend the last event
         d.events_message_ptr->event_stub.event = d.last_event;
@@ -441,7 +441,7 @@ void Engine::onAutoPilot(solid::frame::ReactorContext &_rctx){
                 int icrt_x = crt_x;
                 int icrt_y = crt_y;
                 //idbg(crt_x<<':'<<crt_y<<" "<<icrt_x<<':'<<icrt_y);
-                if(d.auto_q.empty() or (d.auto_q.back().first != icrt_x or d.auto_q.back().second != icrt_y)){
+                if(d.auto_q.empty() || (d.auto_q.back().first != icrt_x || d.auto_q.back().second != icrt_y)){
 
                     d.auto_q.push(AutoPairT(icrt_x, icrt_y));
                 }
@@ -457,7 +457,7 @@ void Engine::onAutoPilot(solid::frame::ReactorContext &_rctx){
 
                 //idbg(crt_x<<':'<<crt_y<<" "<<icrt_x<<':'<<icrt_y);
 
-                if(d.auto_q.empty() or (d.auto_q.back().first != icrt_x or d.auto_q.back().second != icrt_y)){
+                if(d.auto_q.empty() || (d.auto_q.back().first != icrt_x || d.auto_q.back().second != icrt_y)){
                     d.auto_q.push(AutoPairT(icrt_x, icrt_y));
                 }
             }
@@ -550,7 +550,7 @@ void Engine::doProcessIncomingNotifications(solid::frame::ReactorContext &_rctx)
             }
         }
 
-        if(not drop_event_stub){
+        if(!drop_event_stub){
             d.event_stubdq.push_back(std::move(revent_stub));
         }
 
@@ -571,7 +571,7 @@ void Engine::doProcessIncomingNotifications(solid::frame::ReactorContext &_rctx)
     for(auto& plot_stub: d.plotdq[d.write_plotdq_idx]){
         plot_stub.ploted = true;
     }
-    if(not d.paused){
+    if(!d.paused){
         //update gui
         d.gui_update_function();
 
@@ -591,7 +591,7 @@ void Engine::doTrySendEvents(){
         }
         
         
-        if(d.events_message_ptr and not d.paused){
+        if(d.events_message_ptr && !d.paused){
             std::unique_lock<std::mutex> lock(d.mtx);
             //the message is ready to fill - see which of the eventq we should use
             if(d.discarded_on_push){
@@ -614,7 +614,7 @@ void Engine::doTrySendEvents(){
             pop_eventq_idx = -1;
         }
     }
-    if(pop_eventq_idx < 2 and d.events_message_ptr){
+    if(pop_eventq_idx < 2 && d.events_message_ptr){
         //we can fill events_message_ptr and send it to server
         EventQueueT &reventq = d.eventq[pop_eventq_idx];
 
@@ -623,7 +623,7 @@ void Engine::doTrySendEvents(){
         d.events_message_ptr->event_stub.event = reventq.front();
         reventq.pop();
 
-        while(reventq.size() and d.events_message_ptr->event_stub.events.size() < 1000){
+        while(reventq.size() && d.events_message_ptr->event_stub.events.size() < 1000){
             d.events_message_ptr->event_stub.events.push_back(reventq.front());
             reventq.pop();
         }
@@ -638,7 +638,7 @@ void Engine::doTrySendEvents(){
 
 void Engine::onConnectionStart(solid::frame::mpipc::ConnectionContext &_rctx){
     idbg(_rctx.recipientId());
-    if(not d.paused){
+    if(!d.paused){
         d.mpipc_recipient = _rctx.recipientId();
         auto msg_ptr = std::make_shared<RegisterRequest>(d.room_name, d.rgb_color);
         solid::ErrorConditionT  err;
@@ -651,7 +651,7 @@ void Engine::onConnectionStart(solid::frame::mpipc::ConnectionContext &_rctx){
 
 void Engine::onConnectionStop(solid::frame::mpipc::ConnectionContext &_rctx){
     idbg(_rctx.recipientId()<<' '<<_rctx.error().message()<<' '<<d.events_message_ptr);
-    if(not d.paused){
+    if(!d.paused){
         d.service.manager().notify(d.service.manager().id(*this), event_category.event(Events::ConnectionStopped));
     }
 }
@@ -677,7 +677,7 @@ void Engine::onMessage(
 
     if(d.paused) return;
 
-    if(_rrecv_msg_ptr and _rrecv_msg_ptr->success()){
+    if(_rrecv_msg_ptr && _rrecv_msg_ptr->success()){
         d.rgb_color = _rrecv_msg_ptr->rgb_color;
 
         idbg(_rctx.recipientId()<<" MY COLOR: "<<d.rgb_color);

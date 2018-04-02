@@ -1,5 +1,3 @@
-#include <QtGui>
-#include <QApplication>
 #include "bubbles_client_widget.hpp"
 
 
@@ -18,11 +16,15 @@
 #include "solid/frame/mpipc/mpipcsocketstub_openssl.hpp"
 #include "solid/frame/mpipc/mpipccompression_snappy.hpp"
 
+
 #include "client/engine/bubbles_client_engine.hpp"
 
 #include "protocol/bubbles_messages.hpp"
 
 #include "boost/program_options.hpp"
+
+#include <QtGui>
+#include <QApplication>
 
 #include <signal.h>
 
