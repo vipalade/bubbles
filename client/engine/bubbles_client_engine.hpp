@@ -13,7 +13,7 @@ namespace solid{namespace frame{
 namespace mpipc{
     class Service;
 }
-class ReactorContext;
+struct ReactorContext;
 }}
 
 namespace bubbles{

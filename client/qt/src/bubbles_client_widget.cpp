@@ -68,7 +68,7 @@ void Widget::paintEvent(QPaintEvent *)
     uint32_t        g;
     uint32_t        b;
 
-    while(not plotit.end()){
+    while(!plotit.end()){
         split_color(plotit.rgbColor(), r, g, b);
         painter.setPen(QPen(QColor(r, g, b), 3));
         painter.setBrush(QBrush(QColor(r, g, b)));
@@ -126,7 +126,7 @@ void Widget::mouseReleaseEvent(QMouseEvent *event){
 }
 
 void Widget::autoMoveEvent(){
-    if(not moving){
+    if(!moving){
         int x,y;
         engine_ptr->getAutoPosition(x, y);
         pos = QPoint(x, y);
