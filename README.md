@@ -10,9 +10,11 @@ Exemplifies how to use SolidFrame mpipc library in a secured (SSL) client-server
 __bubbles__ is a client-server application. It consists of:
  * a server (runs on Linux/macOS/FreeBSD)
  * a client running on
-   * Linux using Qt for GUI
-   * macOS using Qt for GUI
-   * Android using Java Native Interface
+   * **Linux** - using Qt for GUI
+   * **macOS** - using Qt for GUI
+   * **Windows** - using Qt for GUI
+   * **Android** - using Java Native Interface
+   * **iOS** - interfacing with Swift via CocoaPods
 
 ### The client
 
@@ -38,7 +40,7 @@ The frontend is implemented using either
 The backend engine is implemented in C++ and relies on
  * **solid_frame** libraries (especially **solid_frame_mpipc** for communication)
  * **OpenSSL** (for desktop) / **BoringSSL** (for Android and iOS) - to secure the communication
- * **snappy** for all (Desktop Qt/Android/iOS) versions - to compress communication
+ * **snappy** for all versions - to compress communication
 
 
 ### The server
@@ -134,7 +136,7 @@ $ ./bubbles_server -p 4444 -s 0
 
 ### ... with Qt client ...
 
-#### ... Linux/macOS/FreeBSD
+#### ... on Linux/macOS/FreeBSD
 
 First you'll need to download precompiled Qt from [here](http://download.qt.io/official_releases/qt/5.9/5.9.2/qt-opensource-linux-x64-5.9.2.run):
 
@@ -200,7 +202,7 @@ Install Qt:
  * Next we suppose that Qt installation folder is "c:\qt".
  * Add "C:\qt\5.10.1\msvc2017_64\bin" to system path environment variable - this is needed for Qt*.dll search.
 
-Next are all the commands needed to build bubbles_client Qt application on Windows with all the prerequisites issued in a Git Bash console:
+Next are all the commands needed to build **bubbles_client** Qt application on Windows with all the prerequisites issued in a Git Bash console:
 
 ```bash
 $ mkdir ~/work
@@ -224,8 +226,16 @@ $ cmake -DCMAKE_BUILD_TYPE=maintain -DEXTERNAL_PATH=~/work/external -DSolidFrame
 $ cmake --build . --config release --target bubbles_client
 ```
 
+finally, run the application from Git Bash:
 
-### With Android client
+```bash
+$ release/bubbles_client &
+$ release/bubbles_client &
+$ release/bubbles_client &
+$ release/bubbles_client &
+```
+
+### ... with Android client
 
 ```bash
 $ git clone --recursive https://github.com/vipalade/bubbles.git
@@ -242,7 +252,7 @@ $ git clone --recursive https://github.com/vipalade/bubbles.git
  * _Lesson learned_: For the ExternalProject_Add with **snappy** to work propperly (i.e. the native-lib to be able to link with libsnappy.a), I had to add "BUILD_BYPRODUCTS ${CMAKE_CURRENT_BINARY_DIR}/external/lib/libsnappy.a" field to ExternalProject_Add.
  * _Lesson learned_: Building **BoringSSL** needs [**Go Programming Language**](https://golang.org/) to be installed on the sistem. So, when building **Bubbles** from within AndroidStudio, **Go** will be called via *gradle* -> *cmake* and at this point **Go** has to, somehow be in the PATH variable. This seems not to be a problem when running Android Studio on Linux, but on macOS, **Go** installs itself in PATH environment variable available from the Terminal but it is not available from applications - like Android Studio. The simplest solution is to **launch Android Studio application from a terminal**.
  
-### With iOS client
+### ... with iOS client
 
 First, one needs to have CocoaPods [installed](https://cocoapods.org/#install):
 
