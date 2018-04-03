@@ -61,9 +61,11 @@ The server is a C++ application using **solid_frame** libraries (most important 
  * the server will continue to push other bubbles position changes to the client.
 
 
-## Getting started
+## Getting started ...
 
-### With the server
+### ... with the server ...
+
+#### ... on Linux/macOS/FreeBSD
 
 SolidFrame can be use either installed:
 
@@ -130,7 +132,9 @@ $ ./bubbles_server -p 4444 -s 0
 ```
 
 
-### With Qt client
+### ... with Qt client ...
+
+#### ... Linux/macOS/FreeBSD
 
 First you'll need to download precompiled Qt from [here](http://download.qt.io/official_releases/qt/5.9/5.9.2/qt-opensource-linux-x64-5.9.2.run):
 
@@ -159,13 +163,7 @@ $ cd client/qt
 $ make
 ```
 
-On Windows 10 and Visual Studio 2017:
-
-```bash
-$ cmake -DCMAKE_BUILD_TYPE=debug -DEXTERN_PATH=~/work/external -DSolidFrame_DIR=~/work/solidframe/build/vsmnt64/ -DQt5Widgets_DIR=/c/qt/5.10.1/msvc2017_64/lib/cmake/Qt5Widgets -G "Visual Studio 15 2017 Win64" ../../
-```
-
-run the client with secure communication:
+finally, run the client with secure communication:
 
 ```bash
 # launch multiple bubbles clients:
@@ -185,6 +183,46 @@ $ ./bubbles_client -c localhost:4444 -s 0 &
 ```
 
 Launching the clients without any parameters will try to connect to a default internet server (not always online!).
+
+#### ... on Windows 10 and Visual Studio 2017
+
+Prerequisites:
+ * Visual Studio 2017
+ * [CMake](https://cmake.org/)
+ * [Git for Windows](https://git-scm.com/download/win) - the build workflow uses Git Bash so it must be installed
+ * [Perl for Windows](http://strawberryperl.com/) - it is needed to build OpenSSL for Windows. Windows Git Bash installation also comes with __perl__ but it won't work with OpenSSL build.
+ * [Qt for Windows](https://www.qt.io/download-qt-installer)
+ * [SolidFrame](https://github.com/vipalade/solidframe.git)
+
+Install Qt:
+ * Download and run the [Qt installer](https://www.qt.io/download-qt-installer).
+ * A minimum installation should contain the "Qt 5.10.1" -> "MSVC 2017 64-bit" pre-built binaries.
+ * Next we suppose that Qt installation folder is "c:\qt".
+ * Add "C:\qt\5.10.1\msvc2017_64\bin" to system path environment variable - this is needed for Qt*.dll search.
+
+Next are all the commands needed to build bubbles_client Qt application on Windows with all the prerequisites issued in a Git Bash console:
+
+```bash
+$ mkdir ~/work
+$ cd ~/work
+$ mkdir external
+$ git clone https://github.com/vipalade/solidframe.git
+$ git clone https://github.com/vipalade/bubbles.git
+$ cd external
+$ ../solidframe/prerequisites/run_in_vs2017_env.sh amd64 bash
+$ ../solidframe/prerequisites/prepare_external.sh --boost --openssl --64bit
+$ cd ../solidframe
+$ ./configure -b maintain -f vsmnt64 -e ~/work/external -g "Visual Studio 15 2017 Win64"
+$ cd build/vsmnt64
+# only build the libraries
+$ cmake --build . --config release --target libraries
+# move to bubbles folder
+$ cd ~/work/bubbles
+$ mkdir -p build/vsmnt64
+$ cd build/vsmnt64
+$ cmake -DCMAKE_BUILD_TYPE=maintain -DEXTERNAL_PATH=~/work/external -DSolidFrame_DIR=~/work/solidframe/build/vsmnt64/ -DQt5Widgets_DIR=/c/qt/5.10.1/msvc2017_64/lib/cmake/Qt5Widgets -G "Visual Studio 15 2017 Win64" ../../
+$ cmake --build . --config release --target bubbles_client
+```
 
 
 ### With Android client

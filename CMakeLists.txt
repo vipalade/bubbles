@@ -13,6 +13,12 @@ else ()
     set (CMAKE_CXX_STANDARD 11)
 endif ()
 
+
+string(TOLOWER "${CMAKE_BUILD_TYPE}" CMAKE_BUILD_TYPE)
+
+#force a single configuration type on Windows builds
+set(CMAKE_CONFIGURATION_TYPES "${CMAKE_BUILD_TYPE}" CACHE STRING "" FORCE)
+
 set(OPENSSL_ROOT_DIR "${EXTERNAL_PATH}")
 
 # OpenSSL pacakge
