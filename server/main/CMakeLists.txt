@@ -41,8 +41,8 @@ target_link_libraries (bubbles_server
     solid_frame_mpipc
     solid_frame_aio_openssl
     solid_serialization_v2
-    boost_program_options
-    boost_system
+    ${Boost_PROGRAM_OPTIONS_LIBRARY}
+    ${Boost_SYSTEM_LIBRARY}
     ${SNAPPY_LIB}
     ${SYS_BASIC_LIBS}
     ${SYS_DYNAMIC_LOAD_LIB}

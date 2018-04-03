@@ -166,8 +166,9 @@ int main(int argc, char *argv[]){
     Parameters p;
     
     if(parseArguments(p, argc, argv)) return 0;
-    
+#if !defined(SOLID_ON_WINDOWS)
     signal(SIGPIPE, SIG_IGN);
+#endif
     
 #ifdef SOLID_HAS_DEBUG
     {

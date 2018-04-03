@@ -5,7 +5,7 @@ cmake_minimum_required(VERSION 2.8)
 #-----------------------------------------------------------------
 project (bubbles)
 
-set(EXTERN_PATH "" CACHE PATH "External dependencies folder")#TODO rename to EXTERNAL_PATH
+set(EXTERNAL_PATH "" CACHE PATH "External dependencies folder")#TODO rename to EXTERNAL_PATH
 
 if (CMAKE_VERSION VERSION_LESS "3.1")
     set (CMAKE_CXX_FLAGS "--std=c++11 ${CMAKE_CXX_FLAGS}")
@@ -13,17 +13,42 @@ else ()
     set (CMAKE_CXX_STANDARD 11)
 endif ()
 
-set(OPENSSL_ROOT_DIR "${EXTERN_PATH}")
+set(OPENSSL_ROOT_DIR "${EXTERNAL_PATH}")
+
+# OpenSSL pacakge
 
 find_package(OpenSSL)
 
-set(SolidFrame_DIR "${EXTERN_PATH}/lib/cmake/SolidFrame" CACHE PATH "SolidFrame CMake configuration dir")
+set(SolidFrame_DIR "${EXTERNAL_PATH}/lib/cmake/SolidFrame" CACHE PATH "SolidFrame CMake configuration dir")
 find_package(SolidFrame 3)
 
 if(SolidFrame_FOUND)
     message("SolidFrame found with version: ${SolidFrame_VERSION}")
 else()
 endif()
+
+# boost pacakge
+
+if(WIN32)
+    find_path(BOOST_DIR NAMES boost/asio.hpp PATHS "${EXTERNAL_PATH}/include/boost-1_66")
+    message("boost path ${BOOST_DIR}")
+    set(Boost_FOUND TRUE)
+else()
+    set(BOOST_ROOT "${EXTERNAL_PATH}")
+    set(Boost_USE_STATIC_LIBS ON)
+    set(Boost_USE_MULTITHREADED ON)
+    set(Boost_USE_STATIC_RUNTIME ON)
+
+    find_package(Boost
+        COMPONENTS
+            system
+            filesystem
+            date_time
+            program_options
+            serialization
+    )
+endif(WIN32)
+
 
 if(CMAKE_SYSTEM MATCHES "Linux*")
     message("Detected system ON_LINUX")
@@ -45,14 +70,20 @@ ExternalProject_Add(
     PREFIX ${snappy_PREFIX}
     URL https://github.com/google/snappy/archive/1.1.7.tar.gz
     CMAKE_ARGS
-            -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_BINARY_DIR}/external -DCMAKE_INSTALL_LIBDIR=lib
+            -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_BINARY_DIR}/external -DCMAKE_INSTALL_LIBDIR=lib -DCMAKE_BUILD_TYPE=release
+    BUILD_COMMAND ${CMAKE_COMMAND} --build . --config release
+    INSTALL_COMMAND ${CMAKE_COMMAND} --build . --config release --target install
     LOG_UPDATE ON
     LOG_CONFIGURE ON
     LOG_BUILD ON
     LOG_INSTALL ON
 )
 
-set(SNAPPY_LIB ${CMAKE_BINARY_DIR}/external/lib/libsnappy.a)
+if(WIN32)
+    set(SNAPPY_LIB ${CMAKE_BINARY_DIR}/external/lib/snappy.lib)
+else()
+    set(SNAPPY_LIB ${CMAKE_BINARY_DIR}/external/lib/libsnappy.a)
+endif()
 
 #-----------------------------------------------------------------
 # Global include directories
@@ -60,12 +91,13 @@ set(SNAPPY_LIB ${CMAKE_BINARY_DIR}/external/lib/libsnappy.a)
 include_directories(
     ${CMAKE_CURRENT_BINARY_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}
-    ${EXTERN_PATH}/include/
+    ${EXTERNAL_PATH}/include/
     ${CMAKE_CURRENT_BINARY_DIR}/external/include
+    ${BOOST_DIR}
 )
 
 link_directories(
-    ${EXTERN_PATH}/lib
+    ${EXTERNAL_PATH}/lib
 )
 #-----------------------------------------------------------------
 
