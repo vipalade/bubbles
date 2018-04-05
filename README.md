@@ -2,8 +2,8 @@
 
 Exemplifies how to use SolidFrame mpipc library in a secured (SSL) client-server scenario.
 
-[client/android](client/android) is an example of how to use SolidFrame framework and especially the solid::frame::mpipc library allong with BoringSSL and Snappy in an Android Java application.
-[client/ios](client/ios) is and example of how to use SolidFrame allong with BoringSSL and Snappy as CocoaPods in an iOS Swift application.
+ * [client/android](client/android) is an example of how to use SolidFrame framework and especially the solid::frame::mpipc library allong with BoringSSL and Snappy in an Android Java application.
+ * [client/ios](client/ios) is and example of how to use SolidFrame allong with BoringSSL and Snappy as CocoaPods in an iOS Swift application.
 
 ## Insight
 
@@ -22,7 +22,7 @@ The client displays multiple moving bubbles:
  * one bigger bubble - the personal one which can be moved by the user (via mouse or touch) and/or automatically by a bubble "auto pilot".
  * other smaller bubbles, one for every other client registered on the same room on the server.
 
-So, every client will display in real time all the bubbles in a room at the position in the client they originate.
+So, every client will display in real time all the bubbles in a room at the position in the client they originate in.
 
 ||
 |:---|
