@@ -11,5 +11,5 @@ target 'bubbles' do
   pod 'SolidFrame/serialization_v2', :configuration => 'Debug', :git => 'https://github.com/vipalade/solidframe.git', :branch => 'work'
   pod 'SolidFrame/frame_aio_openssl', :configuration => 'Debug', :git => 'https://github.com/vipalade/solidframe.git', :branch => 'work'
   pod 'BubblesEngine', :configuration => 'Debug', :path => '../../../'
-  pod 'snappy', :configuration => 'Debug', :podspec => 'https://raw.githubusercontent.com/vipalade/bubbles/ios/snappy.podspec'
+  pod 'snappy', :configuration => 'Debug', :podspec => 'https://raw.githubusercontent.com/vipalade/bubbles/work/snappy.podspec'
 end
