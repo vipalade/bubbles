@@ -93,7 +93,7 @@ $ cd ~/work/bubbles/
 $ mkdir -p build/debug
 $ cd build/debug
 # only use the external folder
-$ cmake -DEXTERN_PATH=~/work/external ../../
+$ cmake -DEXTERNAL_PATH=~/work/external ../../
 $ cd server/main
 $ make
 ```
@@ -117,7 +117,7 @@ $ git clone https://github.com/vipalade/bubbles.git
 $ cd ~/work/bubbles/
 $ mkdir -p build/release
 $ cd build/release
-$ cmake -DCMAKE_BUILD_TYPE=release -DEXTERN_PATH=~/work/external -DSolidFrame_DIR=~/work/solidframe/build/release ../../
+$ cmake -DCMAKE_BUILD_TYPE=release -DEXTERNAL_PATH=~/work/external -DSolidFrame_DIR=~/work/solidframe/build/release ../../
 $ cd server/main
 $ make
 
@@ -162,7 +162,7 @@ next, configure the **bubbles** build to also compile the Qt client:
 $ cd ~/work/bubbles/
 $ cd build/release
 # reconfigure with path to QtWidget:
-$ cmake -DCMAKE_BUILD_TYPE=release -DEXTERN_PATH=~/work/external -DSolidFrame_DIR=~/work/solidframe/build/release -DQt5Widgets_DIR=~/work/external/qt/5.9.2/gcc_64/lib/cmake/Qt5Widgets ../../
+$ cmake -DCMAKE_BUILD_TYPE=release -DEXTERNAL_PATH=~/work/external -DSolidFrame_DIR=~/work/solidframe/build/release -DQt5Widgets_DIR=~/work/external/qt/5.9.2/gcc_64/lib/cmake/Qt5Widgets ../../
 $ cd client/qt
 $ make
 ```
