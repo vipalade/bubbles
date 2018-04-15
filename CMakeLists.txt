@@ -36,7 +36,9 @@ endif()
 # boost pacakge
 
 if(WIN32)
-    find_path(BOOST_DIR NAMES boost/asio.hpp PATHS "${EXTERNAL_PATH}/include/boost-1_66")
+    file(GLOB BOOST_PATH "${EXTERNAL_PATH}/include/boost-*/boost/asio.hpp")
+    get_filename_component(BOOST_DIR "${BOOST_PATH}" DIRECTORY)
+    get_filename_component(BOOST_DIR "${BOOST_DIR}" DIRECTORY)
     message("boost path ${BOOST_DIR}")
     set(Boost_FOUND TRUE)
 else()
