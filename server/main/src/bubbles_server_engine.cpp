@@ -9,7 +9,7 @@
 #include "bubbles_server_engine.hpp"
 #include "solid/frame/mpipc/mpipccontext.hpp"
 #include "solid/frame/mpipc/mpipcservice.hpp"
-#include "solid/system/debug.hpp"
+#include "solid/system/log.hpp"
 #include "solid/system/cassert.hpp"
 #include "solid/utility/any.hpp"
 
@@ -176,13 +176,13 @@ void Engine::plotStatistics(std::ostream &_ros){
 }
 
 void Engine::onConnectionStart(solid::frame::mpipc::ConnectionContext &_rctx){
-    idbg(_rctx.recipientId());
+    solid_log(basic_logger, Info, _rctx.recipientId());
 
     _rctx.any() = solid::make_any<0, ConnectionData>();
 }
 
 void Engine::onConnectionStop(solid::frame::mpipc::ConnectionContext &_rctx){
-    idbg(_rctx.recipientId()<<' '<<_rctx.error().message());
+    solid_log(basic_logger, Info, _rctx.recipientId()<<' '<<_rctx.error().message());
 
     ConnectionData *pcon_data = _rctx.any().cast<ConnectionData>();
 
@@ -197,7 +197,7 @@ void Engine::onMessage(
     std::shared_ptr<RegisterRequest> &_rrecv_msg_ptr,
     solid::ErrorConditionT const &_rerror
 ){
-    idbg(_rctx.recipientId()<<" error: "<<_rerror.message());
+    solid_log(basic_logger, Info, _rctx.recipientId()<<" error: "<<_rerror.message());
     SOLID_ASSERT(_rrecv_msg_ptr);
     SOLID_ASSERT(not _rsent_msg_ptr);
     ConnectionData &rcon_data = *_rctx.any().cast<ConnectionData>();
@@ -234,11 +234,11 @@ void Engine::onMessage(
     std::shared_ptr<RegisterResponse> &_rrecv_msg_ptr,
     solid::ErrorConditionT const &_rerror
 ){
-    idbg(_rctx.recipientId()<<" error: "<<_rerror.message());
+    solid_log(basic_logger, Info, _rctx.recipientId()<<" error: "<<_rerror.message());
     SOLID_ASSERT(not _rrecv_msg_ptr);
     SOLID_ASSERT(_rsent_msg_ptr);
     if(_rrecv_msg_ptr){
-        idbg(_rctx.recipientId()<<"closing connection");
+        solid_log(basic_logger, Info, _rctx.recipientId()<<"closing connection");
         _rctx.service().closeConnection(_rctx.recipientId());
     }
 }
@@ -249,7 +249,7 @@ void Engine::onMessage(
     std::shared_ptr<EventsNotification> &_rrecv_msg_ptr,
     solid::ErrorConditionT const &_rerror
 ){
-    idbg(_rctx.recipientId()<<" error: "<<_rerror.message());
+    solid_log(basic_logger, Info, _rctx.recipientId()<<" error: "<<_rerror.message());
 
     if(_rrecv_msg_ptr){
         //received message
@@ -276,22 +276,22 @@ void Engine::onMessage(
                     rcon.pending_count += (1 + _rrecv_msg_ptr->event_stub.events.size());
                     rcon.pending_count += _rrecv_msg_ptr->event_stubs.size();
                     _rrecv_msg_ptr->clearStateFlags();
-                    idbg(i<<" pend_cnt = "<<rcon.pending_count<<" eventsz = "<<_rrecv_msg_ptr->event_stub.events.size());
+                    solid_log(basic_logger, Info, i<<" pend_cnt = "<<rcon.pending_count<<" eventsz = "<<_rrecv_msg_ptr->event_stub.events.size());
                     solid::ErrorConditionT err = _rctx.service().sendMessage(rcon.id, _rrecv_msg_ptr, {frame::mpipc::MessageFlagsE::Synchronous});
                     if(err){
-                        wdbg(rcon_data.room_entry_index<<" failed send message: "<<err.message());
+                        solid_log(basic_logger, Warning, rcon_data.room_entry_index<<" failed send message: "<<err.message());
                         rcon.pending_count -= (1 + _rrecv_msg_ptr->event_stub.events.size());
                         rcon.pending_count -= _rrecv_msg_ptr->event_stubs.size();
                     }
                 }else if(i != rcon_data.room_entry_index){
-                    idbg(_rctx.recipientId()<<" not sent to "<<i<<" pending count = "<<rcon.pending_count);
+                    solid_log(basic_logger, Info, _rctx.recipientId()<<" not sent to "<<i<<" pending count = "<<rcon.pending_count);
                 }
             }
         }else{
             _rctx.service().closeConnection(_rctx.recipientId());
         }
     }else if(_rsent_msg_ptr){
-        idbg(_rctx.recipientId()<<" error: "<<_rerror.message());
+        solid_log(basic_logger, Info, _rctx.recipientId()<<" error: "<<_rerror.message());
 
         ConnectionData      &rcon_data = *_rctx.any().cast<ConnectionData>();
         RoomStub            &room = d.rooms[rcon_data.room_index];
@@ -301,7 +301,7 @@ void Engine::onMessage(
         rcon.pending_count -= (1 + _rsent_msg_ptr->event_stub.events.size());
         rcon.pending_count -= _rsent_msg_ptr->event_stubs.size();
         
-        idbg(rcon_data.room_entry_index<<" pend_cnt = "<<rcon.pending_count<<" eventsz = "<<_rsent_msg_ptr->event_stub.events.size());
+        solid_log(basic_logger, Info, rcon_data.room_entry_index<<" pend_cnt = "<<rcon.pending_count<<" eventsz = "<<_rsent_msg_ptr->event_stub.events.size());
 
         if(rcon.crt_fetch_pos < room.connections.size()){
             fetchLastEvents(_rctx, rcon_data, std::make_shared<EventsNotification>());
@@ -356,7 +356,7 @@ void Engine::fetchLastEvents(
         rcrtcon.pending_count += (1 + _msg_ptr->event_stub.events.size());
         solid::ErrorConditionT  err =_rctx.service().sendMessage(rcrtcon.id, _msg_ptr, {frame::mpipc::MessageFlagsE::Synchronous});
         if(err){
-            wdbg(_rcon_data.room_entry_index<<" failed send message: "<<err.message());
+            solid_log(basic_logger, Warning, _rcon_data.room_entry_index<<" failed send message: "<<err.message());
             rcrtcon.pending_count -= _msg_ptr->event_stubs.size();
             rcrtcon.pending_count -= (1 + _msg_ptr->event_stub.events.size());
         }
@@ -369,7 +369,7 @@ void Engine::onMessage(
     std::shared_ptr<EventsNotificationRequest> &_rrecv_msg_ptr,
     solid::ErrorConditionT const &_rerror
 ){
-    idbg(_rctx.recipientId()<<" error: "<<_rerror.message());
+    solid_log(basic_logger, Info, _rctx.recipientId()<<" error: "<<_rerror.message());
     //TODO:
 }
 
@@ -379,7 +379,7 @@ void Engine::onMessage(
     std::shared_ptr<EventsNotificationResponse> &_rrecv_msg_ptr,
     solid::ErrorConditionT const &_rerror
 ){
-    idbg(_rctx.recipientId()<<" error: "<<_rerror.message());
+    solid_log(basic_logger, Info, _rctx.recipientId()<<" error: "<<_rerror.message());
     //TODO:
 }
 
@@ -390,7 +390,7 @@ uint32_t Engine::registerConnection(
     uint32_t &_rrgb_color
 ){
 
-    idbg(_rctx.recipientId()<<" room name "<<_rreq.room_name);
+    solid_log(basic_logger, Info, _rctx.recipientId()<<" room name "<<_rreq.room_name);
 
     std::string room_name;
 
@@ -456,7 +456,7 @@ uint32_t Engine::registerConnection(
     rcon.rgb_color = rgb_color;
     _rrgb_color = rgb_color;
 
-    idbg("Registered connection on room "<<room.name<<" with id "<<_rcon_data.room_entry_index);
+    solid_log(basic_logger, Info, "Registered connection on room "<<room.name<<" with id "<<_rcon_data.room_entry_index);
 
     fetchLastEvents(_rctx, _rcon_data, std::make_shared<EventsNotification>());
 
@@ -464,7 +464,7 @@ uint32_t Engine::registerConnection(
 }
 
 void Engine::unregisterConnection(solid::frame::mpipc::ConnectionContext &_rctx, ConnectionData &_rcon_data){
-    wdbg(" room: "<<_rcon_data.room_index<<" connection: "<<_rcon_data.room_entry_index);
+    solid_log(basic_logger, Warning, " room: "<<_rcon_data.room_index<<" connection: "<<_rcon_data.room_entry_index);
     RoomStub    &room = d.rooms[_rcon_data.room_index];
     {
         const size_t        dropped_msg_count = room.connections[_rcon_data.room_entry_index].dropped_message_count;
@@ -506,7 +506,7 @@ void Engine::unregisterConnection(solid::frame::mpipc::ConnectionContext &_rctx,
 
         room.clear();
         d.free_stack.push(_rcon_data.room_index);
-        wdbg(" room: "<<_rcon_data.room_index<<" is empty");
+        solid_log(basic_logger, Warning, " room: "<<_rcon_data.room_index<<" is empty");
     }
 
     _rcon_data.room_index = -1;

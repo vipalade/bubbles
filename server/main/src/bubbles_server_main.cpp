@@ -1,4 +1,4 @@
-#include "solid/system/debug.hpp"
+#include "solid/system/log.hpp"
 #include "solid/frame/manager.hpp"
 #include "solid/frame/scheduler.hpp"
 #include "solid/frame/service.hpp"
@@ -31,8 +31,7 @@ using AioSchedulerT = frame::Scheduler<frame::aio::Reactor>;
 struct Parameters{
     Parameters():listener_port("0"), listener_addr("0.0.0.0"){}
 
-    string                  dbg_levels;
-    string                  dbg_modules;
+    vector<string>          dbg_modules;
     string                  dbg_addr;
     string                  dbg_port;
     bool                    dbg_console;
@@ -83,44 +82,29 @@ bool parseArguments(Parameters &_par, int argc, char *argv[]);
 //-----------------------------------------------------------------------------
 
 int main(int argc, char *argv[]){
-    Parameters p;
+    Parameters params;
 
-    if(parseArguments(p, argc, argv)) return 0;
+    if(parseArguments(params, argc, argv)) return 0;
     
     signal(SIGPIPE, SIG_IGN);
     
-#ifdef SOLID_HAS_DEBUG
-    {
-    string dbgout;
-    Debug::the().levelMask(p.dbg_levels.c_str());
-    Debug::the().moduleMask(p.dbg_modules.c_str());
-    if(p.dbg_addr.size() && p.dbg_port.size()){
-        Debug::the().initSocket(
-            p.dbg_addr.c_str(),
-            p.dbg_port.c_str(),
-            p.dbg_buffered,
-            &dbgout
-        );
-    }else if(p.dbg_console){
-        Debug::the().initStdErr(
-            p.dbg_buffered,
-            &dbgout
-        );
-    }else{
-        Debug::the().initFile(
+    if (params.dbg_addr.size() && params.dbg_port.size()) {
+        solid::log_start(
+            params.dbg_addr.c_str(),
+            params.dbg_port.c_str(),
+            params.dbg_modules,
+            params.dbg_buffered);
+
+    } else if (params.dbg_console) {
+        solid::log_start(std::cerr, params.dbg_modules);
+    } else {
+        solid::log_start(
             *argv[0] == '.' ? argv[0] + 2 : argv[0],
-            p.dbg_buffered,
+            params.dbg_modules,
+            params.dbg_buffered,
             3,
-            1024 * 1024 * 64,
-            &dbgout
-        );
+            1024 * 1024 * 64);
     }
-    cout<<"Debug output: "<<dbgout<<endl;
-    dbgout.clear();
-    Debug::the().moduleNames(dbgout);
-    cout<<"Debug modules: "<<dbgout<<endl;
-    }
-#endif
 
     {
 
@@ -151,9 +135,9 @@ int main(int argc, char *argv[]){
             
             cfg.connection_inactivity_timeout_seconds = 60;
 
-            cfg.server.listener_address_str = p.listener_addr;
+            cfg.server.listener_address_str = params.listener_addr;
             cfg.server.listener_address_str += ':';
-            cfg.server.listener_address_str += p.listener_port;
+            cfg.server.listener_address_str += params.listener_port;
 
             cfg.server.connection_start_state = frame::mpipc::ConnectionState::Active;
             //cfg.pool_max_message_queue_size
@@ -168,7 +152,7 @@ int main(int argc, char *argv[]){
                 cfg.server.connection_start_fnc = std::move(connection_start_lambda);
             }
 
-            if(p.secure){
+            if(params.secure){
                 frame::mpipc::openssl::setup_server(
                     cfg,
                     [](frame::aio::openssl::Context &_rctx) -> ErrorCodeT{
@@ -181,7 +165,7 @@ int main(int argc, char *argv[]){
                 );
             }
 
-            if(p.compress){
+            if(params.compress){
                 frame::mpipc::snappy::setup(cfg);
             }
 
@@ -215,8 +199,7 @@ bool parseArguments(Parameters &_par, int argc, char *argv[]){
         options_description desc("Bubbles server");
         desc.add_options()
             ("help,h", "List program options")
-            ("debug-levels,L", value<string>(&_par.dbg_levels)->default_value("view"),"Debug logging levels")
-            ("debug-modules,M", value<string>(&_par.dbg_modules),"Debug logging modules")
+            ("debug-modules,M", value<vector<string>>(&_par.dbg_modules),"Debug logging modules")
             ("debug-address,A", value<string>(&_par.dbg_addr), "Debug server address (e.g. on linux use: nc -l 9999)")
             ("debug-port,P", value<string>(&_par.dbg_port)->default_value("9999"), "Debug server port (e.g. on linux use: nc -l 9999)")
             ("debug-console,C", value<bool>(&_par.dbg_console)->implicit_value(true)->default_value(false), "Debug console")
