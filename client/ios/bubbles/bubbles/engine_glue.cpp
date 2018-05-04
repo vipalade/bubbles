@@ -274,14 +274,14 @@ int engine_start(
             _exit_fnc(_pexit_data);
         };
         auto update_closure = [_pupdate_data, _update_fnc](){
-            solid_log(basic_logger, Info, "");
+            solid_log(generic_logger, Info, "");
             _update_fnc(_pupdate_data);
         };
         auto auto_closure = [_pauto_data, _auto_fnc](){
 
             int x,y;
             g_ctx.engine_ptr->getAutoPosition(x, y);
-            solid_log(basic_logger, Info, "x = "<<x<<" y = "<<y);
+            solid_log(generic_logger, Info, "x = "<<x<<" y = "<<y);
             _auto_fnc(_pauto_data, x, y);
         };
         
@@ -290,7 +290,7 @@ int engine_start(
         g_ctx.engine_ptr->setGuiUpdateFunction(update_closure);
         
     }
-    solid_log(basic_logger, Info, "starting engine for host: "<<g_ctx.endpoint<<" room: "<<g_ctx.room_name<<" auto_pilot: "<<_auto_pilot);
+    solid_log(generic_logger, Info, "starting engine for host: "<<g_ctx.endpoint<<" room: "<<g_ctx.room_name<<" auto_pilot: "<<_auto_pilot);
     err = g_ctx.engine_ptr->start(g_ctx.sch, g_ctx.endpoint, g_ctx.room_name, _auto_pilot == 1);
     
     if(err){
@@ -298,7 +298,7 @@ int engine_start(
         return -1;
     }
     g_ctx.started = true;
-    solid_log(basic_logger, Info, "Engine started");
+    solid_log(generic_logger, Info, "Engine started");
     return 0;
 }
 

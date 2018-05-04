@@ -256,7 +256,7 @@ int main(int argc, char *argv[]){
 
         if(params.secure){
             //configure OpenSSL:
-            solid_log(basic_logger, Info, "Configure SSL ---------------------------------------");
+            solid_log(generic_logger, Info, "Configure SSL ---------------------------------------");
             frame::mpipc::openssl::setup_client(
                 cfg,
                 [](frame::aio::openssl::Context &_rctx) -> ErrorCodeT{
@@ -305,7 +305,7 @@ bool parseArguments(Parameters &_par, int argc, char *argv[]){
         options_description desc("Bubbles client");
         desc.add_options()
             ("help,h", "List program options")
-            ("debug-modules,M", value<vector<string>>(&_par.dbg_modules),"Debug logging modules")
+            ("debug-modules,M", value<vector<string>>(&_par.dbg_modules),"Debug logging modules (e.g. \".*:EW\", \"\\*:VIEW\")")
             ("debug-address,A", value<string>(&_par.dbg_addr), "Debug server address (e.g. on linux use: nc -l 9999)")
             ("debug-port,P", value<string>(&_par.dbg_port)->default_value("9999"), "Debug server port (e.g. on linux use: nc -l 9999)")
             ("debug-console,C", value<bool>(&_par.dbg_console)->implicit_value(true)->default_value(false), "Debug console")

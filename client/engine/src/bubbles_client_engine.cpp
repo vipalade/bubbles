@@ -229,7 +229,7 @@ solid::ErrorConditionT Engine::start(
     const bool _auto_pilot,
     uint32_t _rgb_color
 ){
-    solid_log(basic_logger, Info, "");
+    solid_log(generic_logger, Info, "");
     solid::ErrorConditionT                  err;
 
     if(!this->isRunning()){
@@ -290,7 +290,7 @@ bool Engine::autoPilot()const{
 
 void Engine::moveEvent(int _x, int _y){
 
-    solid_log(basic_logger, Info, _x<<':'<<_y);
+    solid_log(generic_logger, Info, _x<<':'<<_y);
     bool notify_engine = false;
     {
         std::unique_lock<std::mutex>    lock(d.mtx);
@@ -312,7 +312,7 @@ void Engine::moveEvent(int _x, int _y){
 }
 
 void Engine::onEvent(frame::ReactorContext &_rctx, solid::Event &&_uevent) /*override*/{
-    solid_log(basic_logger, Info, " event = "<<_uevent);
+    solid_log(generic_logger, Info, " event = "<<_uevent);
     if(generic_event_category.event(GenericEvents::Start) == _uevent){
 
         d.events_message_ptr = std::make_shared<EventsNotification>();
@@ -366,14 +366,14 @@ void Engine::doResume(solid::frame::ReactorContext &_rctx){
 
 void Engine::doHandleConnectionStop(solid::frame::ReactorContext &_rctx){
     if(d.events_message_ptr && !d.paused){
-        solid_log(basic_logger, Info, "");
+        solid_log(generic_logger, Info, "");
         //connection stopped and there is no activity to send, resend the last event
         d.events_message_ptr->event_stub.event = d.last_event;
 
         std::shared_ptr<EventsNotification> tmp_ptr{std::move(d.events_message_ptr)};
         solid::ErrorConditionT  err = d.rmpipc.sendMessage(d.server_endpoint.c_str(), tmp_ptr);
         if(err){
-            solid_log(basic_logger, Error, ""<< " sendMessage error: "<<err.message());
+            solid_log(generic_logger, Error, ""<< " sendMessage error: "<<err.message());
         }
         
         //clear all events
@@ -430,7 +430,7 @@ void Engine::onAutoPilot(solid::frame::ReactorContext &_rctx){
 
         float slope = (new_y - old_y)/(new_x - old_x);
 
-        //solid_log(basic_logger, Info, old_x<<':'<<old_y<<" -> "<<new_x<<':'<<new_y<<" in "<<new_s<<" steps");
+        //solid_log(generic_logger, Info, old_x<<':'<<old_y<<" -> "<<new_x<<':'<<new_y<<" in "<<new_s<<" steps");
 
         if(dis_x < dis_y){
             //go by y axis
@@ -440,7 +440,7 @@ void Engine::onAutoPilot(solid::frame::ReactorContext &_rctx){
                 float crt_x = ((crt_y - old_y) + old_x * slope)/slope;
                 int icrt_x = crt_x;
                 int icrt_y = crt_y;
-                //solid_log(basic_logger, Info, crt_x<<':'<<crt_y<<" "<<icrt_x<<':'<<icrt_y);
+                //solid_log(generic_logger, Info, crt_x<<':'<<crt_y<<" "<<icrt_x<<':'<<icrt_y);
                 if(d.auto_q.empty() || (d.auto_q.back().first != icrt_x || d.auto_q.back().second != icrt_y)){
 
                     d.auto_q.push(AutoPairT(icrt_x, icrt_y));
@@ -455,7 +455,7 @@ void Engine::onAutoPilot(solid::frame::ReactorContext &_rctx){
                 int icrt_x = crt_x;
                 int icrt_y = crt_y;
 
-                //solid_log(basic_logger, Info, crt_x<<':'<<crt_y<<" "<<icrt_x<<':'<<icrt_y);
+                //solid_log(generic_logger, Info, crt_x<<':'<<crt_y<<" "<<icrt_x<<':'<<icrt_y);
 
                 if(d.auto_q.empty() || (d.auto_q.back().first != icrt_x || d.auto_q.back().second != icrt_y)){
                     d.auto_q.push(AutoPairT(icrt_x, icrt_y));
@@ -468,7 +468,7 @@ void Engine::onAutoPilot(solid::frame::ReactorContext &_rctx){
 }
 
 void Engine::doProcessIncomingNotifications(solid::frame::ReactorContext &_rctx){
-    solid_log(basic_logger, Info, "");
+    solid_log(generic_logger, Info, "");
     {
         std::unique_lock<std::mutex> lock(d.mtx);
         swap(d.pop_messagedq_idx, d.push_messagedq_idx);
@@ -478,10 +478,10 @@ void Engine::doProcessIncomingNotifications(solid::frame::ReactorContext &_rctx)
 
     //put all the event stubs in a queue
     for(auto& msg_ptr:rmessagedq){
-        solid_log(basic_logger, Info, " event_stub with color ("<<msg_ptr->event_stub.sender_rgb_color<<") main event "<<msg_ptr->event_stub.event.x<<":"<<msg_ptr->event_stub.event.y<<" and other "<<msg_ptr->event_stub.events.size()<<" events");
+        solid_log(generic_logger, Info, " event_stub with color ("<<msg_ptr->event_stub.sender_rgb_color<<") main event "<<msg_ptr->event_stub.event.x<<":"<<msg_ptr->event_stub.event.y<<" and other "<<msg_ptr->event_stub.events.size()<<" events");
         d.event_stubdq.push_back(std::move(msg_ptr->event_stub));
         for(auto &e_s: msg_ptr->event_stubs){
-            solid_log(basic_logger, Info, " event_stub with color ("<<e_s.sender_rgb_color<<") main event "<<e_s.event.x<<":"<<e_s.event.y<<" and other "<<e_s.events.size()<<" events");
+            solid_log(generic_logger, Info, " event_stub with color ("<<e_s.sender_rgb_color<<") main event "<<e_s.event.x<<":"<<e_s.event.y<<" and other "<<e_s.events.size()<<" events");
             d.event_stubdq.push_back(std::move(e_s));
         }
     }
@@ -582,7 +582,7 @@ void Engine::doProcessIncomingNotifications(solid::frame::ReactorContext &_rctx)
 }
 
 void Engine::doTrySendEvents(){
-    solid_log(basic_logger, Info, "");
+    solid_log(generic_logger, Info, "");
     size_t      pop_eventq_idx = 0;
     {
         if(d.tmp_events_message_ptr){
@@ -631,13 +631,13 @@ void Engine::doTrySendEvents(){
         std::shared_ptr<EventsNotification> tmp_ptr{std::move(d.events_message_ptr)};
         solid::ErrorConditionT  err = d.rmpipc.sendMessage(d.server_endpoint.c_str(), tmp_ptr);
         if(err){
-            solid_log(basic_logger, Error, ""<< " sendMessage error: "<<err.message());
+            solid_log(generic_logger, Error, ""<< " sendMessage error: "<<err.message());
         }
     }
 }
 
 void Engine::onConnectionStart(solid::frame::mpipc::ConnectionContext &_rctx){
-    solid_log(basic_logger, Info, _rctx.recipientId());
+    solid_log(generic_logger, Info, _rctx.recipientId());
     if(!d.paused){
         d.mpipc_recipient = _rctx.recipientId();
         auto msg_ptr = std::make_shared<RegisterRequest>(d.room_name, d.rgb_color);
@@ -650,7 +650,7 @@ void Engine::onConnectionStart(solid::frame::mpipc::ConnectionContext &_rctx){
 }
 
 void Engine::onConnectionStop(solid::frame::mpipc::ConnectionContext &_rctx){
-    solid_log(basic_logger, Info, _rctx.recipientId()<<' '<<_rctx.error().message()<<' '<<d.events_message_ptr);
+    solid_log(generic_logger, Info, _rctx.recipientId()<<' '<<_rctx.error().message()<<' '<<d.events_message_ptr);
     if(!d.paused){
         d.service.manager().notify(d.service.manager().id(*this), event_category.event(Events::ConnectionStopped));
     }
@@ -673,14 +673,14 @@ void Engine::onMessage(
     solid::ErrorConditionT const &_rerror
 ){
 
-    solid_log(basic_logger, Info, _rctx.recipientId()<<" error: "<<_rerror.message());
+    solid_log(generic_logger, Info, _rctx.recipientId()<<" error: "<<_rerror.message());
 
     if(d.paused) return;
 
     if(_rrecv_msg_ptr && _rrecv_msg_ptr->success()){
         d.rgb_color = _rrecv_msg_ptr->rgb_color;
 
-        solid_log(basic_logger, Info, _rctx.recipientId()<<" MY COLOR: "<<d.rgb_color);
+        solid_log(generic_logger, Info, _rctx.recipientId()<<" MY COLOR: "<<d.rgb_color);
         //clear all events
         
         //NOTE: we cannot clear here - we must move to Engine's thread
@@ -694,7 +694,7 @@ void Engine::onMessage(
         d.service.manager().notify(d.service.manager().id(*this), generic_event_category.event(GenericEvents::Resume));
     }else if(_rrecv_msg_ptr){
         //failed registering the connection
-        solid_log(basic_logger, Error, _rctx.recipientId()<<" Connection registration failed because ["<<_rrecv_msg_ptr->message<<"]. Exiting");
+        solid_log(generic_logger, Error, _rctx.recipientId()<<" Connection registration failed because ["<<_rrecv_msg_ptr->message<<"]. Exiting");
         d.service.manager().notify(d.service.manager().id(*this), generic_event_category.event(GenericEvents::Stop));
     }
 }
@@ -705,7 +705,7 @@ void Engine::onMessage(
     std::shared_ptr<EventsNotification> &_rrecv_msg_ptr,
     solid::ErrorConditionT const &_rerror
 ){
-    solid_log(basic_logger, Info, _rctx.recipientId()<<" error: "<<_rerror.message());
+    solid_log(generic_logger, Info, _rctx.recipientId()<<" error: "<<_rerror.message());
     if(_rrecv_msg_ptr){
         bool notify = false;
         {
@@ -733,7 +733,7 @@ void Engine::onMessage(
     std::shared_ptr<EventsNotificationResponse> &_rrecv_msg_ptr,
     solid::ErrorConditionT const &_rerror
 ){
-    solid_log(basic_logger, Info, _rctx.recipientId()<<" error: "<<_rerror.message());
+    solid_log(generic_logger, Info, _rctx.recipientId()<<" error: "<<_rerror.message());
 }
 
 
