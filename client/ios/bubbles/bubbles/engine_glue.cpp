@@ -168,15 +168,7 @@ int engine_start(
     void *_pauto_data, AutoUpdateCallbackT _auto_fnc
 ){
     
-#ifdef SOLID_HAS_DEBUG
-    {
-        string dbgout;
-        Debug::the().levelMask("ew");
-        Debug::the().moduleMask("any");
-        Debug::the().initStdErr("false", &dbgout);
-        dbgout.clear();
-    }
-#endif
+    solid::log_start(std::cerr, {".*:EW"});
     
     g_ctx.endpoint = _host;
     g_ctx.room_name = _room;
@@ -198,21 +190,21 @@ int engine_start(
     err = g_ctx.sch.start(thr_enter, thr_exit, 1);
     
     if(err){
-        edbg("Error starting aio scheduler: "<<err.message());
+        solid_log(generic_logger, Error, "Error starting aio scheduler: "<<err.message());
         return -1;
     }
     
     err = g_ctx.aio_sch.start(1);
     
     if(err){
-        edbg("Error starting aio scheduler: "<<err.message());
+        solid_log(generic_logger, Error, "Error starting aio scheduler: "<<err.message());
         return -1;
     }
     
     err = g_ctx.resolver.start(1);
     
     if(err){
-        edbg("Error starting aio resolver: "<<err.message());
+        solid_log(generic_logger, Error, "Error starting aio resolver: "<<err.message());
         return -1;
     }
     
@@ -230,11 +222,11 @@ int engine_start(
         
         {
             auto connection_stop_lambda = [](frame::mpipc::ConnectionContext &_ctx){
-                edbg("connection stop");
+                solid_log(generic_logger, Error, "connection stop");
                 g_ctx.engine_ptr->onConnectionStop(_ctx);
             };
             auto connection_start_lambda = [](frame::mpipc::ConnectionContext &_ctx){
-                edbg("connection start");
+                solid_log(generic_logger, Error, "connection start");
                 g_ctx.engine_ptr->onConnectionStart(_ctx);
             };
             cfg.connection_stop_fnc = std::move(connection_stop_lambda);
@@ -263,7 +255,7 @@ int engine_start(
         err = g_ctx.ipcsvc.reconfigure(std::move(cfg));
         
         if(err){
-            edbg("Error starting ipcservice: "<<err.message());
+            solid_log(generic_logger, Error, "Error starting ipcservice: "<<err.message());
             return -1;
         }
     }
@@ -294,7 +286,7 @@ int engine_start(
     err = g_ctx.engine_ptr->start(g_ctx.sch, g_ctx.endpoint, g_ctx.room_name, _auto_pilot == 1);
     
     if(err){
-        edbg("Error starting engine: "<<err.message());
+        solid_log(generic_logger, Error, "Error starting engine: "<<err.message());
         return -1;
     }
     g_ctx.started = true;
