@@ -292,7 +292,7 @@ jboolean Java_com_example_vapa_bubbles_BubblesActivity_nativeStart(
         return JNI_FALSE;
     }
     
-    fwp.start(WorkPoolConfiguration());
+    g_ctx.fwp.start(WorkPoolConfiguration());
 
     {
         auto                        proto = bubbles::ProtocolT::create();//small limits by default
