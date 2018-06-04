@@ -198,8 +198,9 @@ int main(int argc, char *argv[]){
     frame::ServiceT                     service{manager};
 
     frame::mpipc::ServiceT              ipcservice{manager};
-
-    frame::aio::Resolver                resolver;
+    
+    FunctionWorkPool                    fwp;
+    frame::aio::Resolver                resolver(fwp);
 
     ErrorConditionT                     err;
     bubbles::client::Engine::PointerT   engine_ptr{bubbles::client::Engine::create(service, ipcservice, bubbles::client::EngineConfiguration{})};
@@ -212,13 +213,8 @@ int main(int argc, char *argv[]){
         cout<<"Error starting aio scheduler: "<<err.message()<<endl;
         return 1;
     }
-
-    err = resolver.start(1);
-
-    if(err){
-        cout<<"Error starting aio resolver: "<<err.message()<<endl;
-        return 1;
-    }
+    
+    fwp.start(WorkPoolConfiguration());
 
     err = scheduler.start(1);
 

@@ -46,7 +46,7 @@ namespace {
         Context(
         
         ): done(false), started(false),
-        m{}, ipcsvc(m), svc(m){}
+        m{}, ipcsvc(m), svc(m), resolver(fwp){}
         
         bool                    done;
         bool                    started;
@@ -61,6 +61,7 @@ namespace {
         frame::Manager          m;
         frame::mpipc::ServiceT  ipcsvc;
         frame::ServiceT         svc;
+        FunctionWorkPool        fwp;
         frame::aio::Resolver    resolver;
         BubblesEnginePointerT   engine_ptr;
         PlotIteratorT           plotit;
@@ -209,12 +210,7 @@ int engine_start(
         return -1;
     }
     
-    err = g_ctx.resolver.start(1);
-    
-    if(err){
-        edbg("Error starting aio resolver: "<<err.message());
-        return -1;
-    }
+    fwp.start(WorkPoolConfiguration());
     
     {
         auto                        proto = bubbles::ProtocolT::create();//small limits by default

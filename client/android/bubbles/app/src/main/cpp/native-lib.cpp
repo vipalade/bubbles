@@ -50,7 +50,7 @@ namespace {
         Context(
 
         ):  vm(nullptr), done(false), started(false), bubblesActivityClz(nullptr), bubblesActivityObj(nullptr),
-            m{}, ipcsvc(m), svc(m){}
+            m{}, ipcsvc(m), svc(m), resolver(fwp){}
 
         JavaVM                  *vm;
         bool                    done;
@@ -68,6 +68,7 @@ namespace {
         frame::Manager          m;
         frame::mpipc::ServiceT  ipcsvc;
         frame::ServiceT         svc;
+        FunctionWorkPool        fwp;
         frame::aio::Resolver    resolver;
         BubblesEnginePointerT   engine_ptr;
         PlotIteratorT           plotit;
@@ -290,14 +291,8 @@ jboolean Java_com_example_vapa_bubbles_BubblesActivity_nativeStart(
         LOGE("native: Error starting aio scheduler: %s",err.message().c_str());
         return JNI_FALSE;
     }
-
-    err = g_ctx.resolver.start(1);
-
-    if(err){
-        //cout<<"Error starting aio resolver: "<<err.message()<<endl;
-        LOGE("Error starting aio resolver: %s",err.message().c_str());
-        return JNI_FALSE;
-    }
+    
+    fwp.start(WorkPoolConfiguration());
 
     {
         auto                        proto = bubbles::ProtocolT::create();//small limits by default
