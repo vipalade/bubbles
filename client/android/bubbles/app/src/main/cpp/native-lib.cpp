@@ -50,7 +50,7 @@ namespace {
         Context(
 
         ):  vm(nullptr), done(false), started(false), bubblesActivityClz(nullptr), bubblesActivityObj(nullptr),
-            m{}, ipcsvc(m), svc(m), resolver(fwp){}
+            m{}, ipcsvc(m), svc(m), fwp(WorkPoolConfiguration()), resolver(fwp){}
 
         JavaVM                  *vm;
         bool                    done;
@@ -292,8 +292,6 @@ jboolean Java_com_example_vapa_bubbles_BubblesActivity_nativeStart(
         return JNI_FALSE;
     }
     
-    g_ctx.fwp.start(WorkPoolConfiguration());
-
     {
         auto                        proto = bubbles::ProtocolT::create();//small limits by default
         frame::mpipc::Configuration cfg(g_ctx.aio_sch, proto);

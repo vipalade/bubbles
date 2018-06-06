@@ -199,7 +199,7 @@ int main(int argc, char *argv[]){
 
     frame::mpipc::ServiceT              ipcservice{manager};
     
-    FunctionWorkPool                    fwp;
+    FunctionWorkPool                    fwp{WorkPoolConfiguration()};
     frame::aio::Resolver                resolver(fwp);
 
     ErrorConditionT                     err;
@@ -214,8 +214,6 @@ int main(int argc, char *argv[]){
         return 1;
     }
     
-    fwp.start(WorkPoolConfiguration());
-
     err = scheduler.start(1);
 
     if(err){

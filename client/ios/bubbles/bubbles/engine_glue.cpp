@@ -46,7 +46,7 @@ namespace {
         Context(
         
         ): done(false), started(false),
-        m{}, ipcsvc(m), svc(m), resolver(fwp){}
+        m{}, ipcsvc(m), svc(m), fwp(WorkPoolConfiguration()), resolver(fwp){}
         
         bool                    done;
         bool                    started;
@@ -201,8 +201,6 @@ int engine_start(
         solid_log(generic_logger, Error, "Error starting aio scheduler: "<<err.message());
         return -1;
     }
-    
-    g_ctx.fwp.start(WorkPoolConfiguration());
     
     {
         auto                        proto = bubbles::ProtocolT::create();//small limits by default
