@@ -266,5 +266,6 @@ $ sudo gem install cocoapods
 $ git clone https://github.com/vipalade/bubbles.git
 $ cd bubbles/client/ios/bubbles
 $ pod install
+# once installed use: pod update
 $ open bubbles.xcworkspace
 ```
