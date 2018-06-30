@@ -3,6 +3,8 @@
 #include <android/log.h>
 #include <cassert>
 
+#include "solid/utility/workpool.hpp"
+
 #include "solid/frame/manager.hpp"
 #include "solid/frame/scheduler.hpp"
 #include "solid/frame/service.hpp"
