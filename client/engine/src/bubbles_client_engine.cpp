@@ -586,7 +586,7 @@ void Engine::doTrySendEvents(){
     size_t      pop_eventq_idx = 0;
     {
         if(d.tmp_events_message_ptr){
-            SOLID_ASSERT(!d.events_message_ptr);
+            solid_assert(!d.events_message_ptr);
             d.events_message_ptr = std::move(d.tmp_events_message_ptr);
         }
         
@@ -642,7 +642,7 @@ void Engine::onConnectionStart(solid::frame::mpipc::ConnectionContext &_rctx){
         d.mpipc_recipient = _rctx.recipientId();
         auto msg_ptr = std::make_shared<RegisterRequest>(d.room_name, d.rgb_color);
         solid::ErrorConditionT  err;
-        SOLID_CHECK(!(err = _rctx.service().sendMessage(_rctx.recipientId(), msg_ptr, {frame::mpipc::MessageFlagsE::WaitResponse})), "failed send message: "<<err.message());
+        solid_check(!(err = _rctx.service().sendMessage(_rctx.recipientId(), msg_ptr, {frame::mpipc::MessageFlagsE::WaitResponse})), "failed send message: "<<err.message());
     }else{
         auto lambda = [](solid::frame::mpipc::ConnectionContext &_rctx){};
         d.rmpipc.forceCloseConnectionPool(_rctx.recipientId(), lambda);
@@ -721,7 +721,7 @@ void Engine::onMessage(
         }
     }else if(_rsent_msg_ptr){
         _rsent_msg_ptr->clear();
-        SOLID_ASSERT(!d.tmp_events_message_ptr);
+        solid_assert(!d.tmp_events_message_ptr);
         d.tmp_events_message_ptr = std::move(_rsent_msg_ptr);
         d.service.manager().notify(d.service.manager().id(*this), generic_event_category.event(GenericEvents::Raise));
     }

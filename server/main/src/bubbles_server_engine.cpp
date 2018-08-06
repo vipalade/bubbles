@@ -198,8 +198,8 @@ void Engine::onMessage(
     solid::ErrorConditionT const &_rerror
 ){
     solid_log(generic_logger, Info, _rctx.recipientId()<<" error: "<<_rerror.message());
-    SOLID_ASSERT(_rrecv_msg_ptr);
-    SOLID_ASSERT(not _rsent_msg_ptr);
+    solid_assert(_rrecv_msg_ptr);
+    solid_assert(not _rsent_msg_ptr);
     ConnectionData &rcon_data = *_rctx.any().cast<ConnectionData>();
 
     uint32_t    error_id = 0;
@@ -211,7 +211,7 @@ void Engine::onMessage(
 
         if(error_id == 0){
             
-            SOLID_CHECK(!(err = _rctx.service().sendMessage(
+            solid_check(!(err = _rctx.service().sendMessage(
                 _rctx.recipientId(),
                 std::make_shared<RegisterResponse>(*_rrecv_msg_ptr, rgb_color), {frame::mpipc::MessageFlagsE::Synchronous}
             )), "failed send message: "<<err.message());
@@ -221,7 +221,7 @@ void Engine::onMessage(
         error_id = ErrorAlreadyRegistered;
     }
 
-    SOLID_CHECK(!(err = _rctx.service().sendResponse(
+    solid_check(!(err = _rctx.service().sendResponse(
         _rctx.recipientId(),
         std::make_shared<RegisterResponse>(*_rrecv_msg_ptr, error_id, error_message(error_id)), {frame::mpipc::MessageFlagsE::Synchronous}
     )), "failed send message: "<<err.message());
@@ -235,8 +235,8 @@ void Engine::onMessage(
     solid::ErrorConditionT const &_rerror
 ){
     solid_log(generic_logger, Info, _rctx.recipientId()<<" error: "<<_rerror.message());
-    SOLID_ASSERT(not _rrecv_msg_ptr);
-    SOLID_ASSERT(_rsent_msg_ptr);
+    solid_assert(not _rrecv_msg_ptr);
+    solid_assert(_rsent_msg_ptr);
     if(_rrecv_msg_ptr){
         solid_log(generic_logger, Info, _rctx.recipientId()<<"closing connection");
         _rctx.service().closeConnection(_rctx.recipientId());
