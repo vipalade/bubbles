@@ -245,6 +245,7 @@ $ git clone --recursive https://github.com/vipalade/bubbles.git
 
  * load bubbles/client/android project in Android Studio >= 3.0 (tested on macOS and Linux)
  * run the application from there either within emulator or on phisical device.
+
  
 #### NOTES
 
@@ -253,6 +254,10 @@ $ git clone --recursive https://github.com/vipalade/bubbles.git
  * Although all libraries can be built as external projects, I'll maintain this status quo as an example of how to use git modules.
  * _Lesson learned_: For the ExternalProject_Add with **snappy** to work propperly (i.e. the native-lib to be able to link with libsnappy.a), I had to add "BUILD_BYPRODUCTS ${CMAKE_CURRENT_BINARY_DIR}/external/lib/libsnappy.a" field to ExternalProject_Add.
  * _Lesson learned_: Building **BoringSSL** needs [**Go Programming Language**](https://golang.org/) to be installed on the sistem. So, when building **Bubbles** from within AndroidStudio, **Go** will be called via *gradle* -> *cmake* and at this point **Go** has to, somehow be in the PATH variable. This seems not to be a problem when running Android Studio on Linux, but on macOS, **Go** installs itself in PATH environment variable available from the Terminal but it is not available from applications - like Android Studio. The simplest solution is to **launch Android Studio application from a terminal**.
+ * Bubbles git repository uses SYMLINKs underneath client/android/bubbles, so symbolic links support in the development OS must be available. This is not a problem on Linux and macOS. On Windows, though:
+    * make sure you enable "symbolic links support" on git install.
+    * [allow user create SYMLINKs](https://github.com/git-for-windows/git/wiki/Symbolic-Links#creating-symbolic-links)
+    * [allow user create SYMLINKs without elevation - enable device for development](https://docs.microsoft.com/en-us/windows/uwp/get-started/enable-your-device-for-development)
  
 ### ... with iOS client
 
@@ -266,6 +271,5 @@ $ sudo gem install cocoapods
 $ git clone https://github.com/vipalade/bubbles.git
 $ cd bubbles/client/ios/bubbles
 $ pod install
-# once installed use: pod update
 $ open bubbles.xcworkspace
 ```
