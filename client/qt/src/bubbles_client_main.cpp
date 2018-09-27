@@ -29,6 +29,7 @@
 #include <signal.h>
 
 #include <iostream>
+#include <fstream>
 
 using namespace solid;
 using namespace std;
@@ -153,6 +154,13 @@ struct MessageSetup {
 }//namespace client
 }//namespace bubbles
 
+namespace{
+string load_file(const char *_fname){
+    std::ifstream t(_fname);
+    return std::string((std::istreambuf_iterator<char>(t)),
+                 std::istreambuf_iterator<char>());
+}
+}
 //-----------------------------------------------------------------------------
 
 bool parseArguments(Parameters &_par, int argc, char *argv[]);
@@ -254,9 +262,19 @@ int main(int argc, char *argv[]){
             frame::mpipc::openssl::setup_client(
                 cfg,
                 [](frame::aio::openssl::Context &_rctx) -> ErrorCodeT{
-                    _rctx.loadVerifyFile("bubbles-ca-cert.pem");
-                    _rctx.loadCertificateFile("bubbles-client-cert.pem");
-                    _rctx.loadPrivateKeyFile("bubbles-client-key.pem");
+                    if(true){
+                        const string verify_authority_str = load_file("bubbles-ca-cert.pem");
+                        const string client_cert_str = load_file("bubbles-client-cert.pem");
+                        const string client_key_str = load_file("bubbles-client-key.pem");
+
+                        _rctx.addVerifyAuthority(verify_authority_str);
+                        _rctx.loadCertificate(client_cert_str);
+                        _rctx.loadPrivateKey(client_key_str);
+                    }else{
+                        _rctx.loadVerifyFile("bubbles-ca-cert.pem");
+                        _rctx.loadCertificateFile("bubbles-client-cert.pem");
+                        _rctx.loadPrivateKeyFile("bubbles-client-key.pem");
+                    }
                     return ErrorCodeT();
                 },
                 frame::mpipc::openssl::NameCheckSecureStart{"bubbles-server"}

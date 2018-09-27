@@ -216,7 +216,7 @@ int engine_start(
         
         {
             auto connection_stop_lambda = [](frame::mpipc::ConnectionContext &_ctx){
-                solid_log(generic_logger, Error, "connection stop");
+                solid_log(generic_logger, Error, "connection stop: "<<_ctx.error().message()<<" | "<<_ctx.systemError().message());
                 g_ctx.engine_ptr->onConnectionStop(_ctx);
             };
             auto connection_start_lambda = [](frame::mpipc::ConnectionContext &_ctx){
