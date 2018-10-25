@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		1EA31874CBCD049CC9A29843 /* Pods_bubbles.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 50956D6E8A9EA741BBE2D0F9 /* Pods_bubbles.framework */; };
 		A7247E1420022B2300BE4947 /* engine_glue.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A7247E1220022B2300BE4947 /* engine_glue.cpp */; };
 		A7615E212007F18A00B505A8 /* bubbles-client-cert.pem in Resources */ = {isa = PBXBuildFile; fileRef = A7615E1E2007F18A00B505A8 /* bubbles-client-cert.pem */; };
 		A7615E222007F18A00B505A8 /* bubbles-client-key.pem in Resources */ = {isa = PBXBuildFile; fileRef = A7615E1F2007F18A00B505A8 /* bubbles-client-key.pem */; };
@@ -19,11 +18,12 @@
 		A7802BAF2001067B004660D4 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = A7802BAD2001067B004660D4 /* LaunchScreen.storyboard */; };
 		A7802BB720010B7D004660D4 /* DrawViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7802BB620010B7D004660D4 /* DrawViewController.swift */; };
 		A7802BB920010C1C004660D4 /* DrawView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7802BB820010C1C004660D4 /* DrawView.swift */; };
+		EE7A96F325B2CCADADD5996E /* Pods_bubbles.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7A336176A115FB3682CD9C02 /* Pods_bubbles.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		08AEEF2F6BD36763A9D4F007 /* Pods-bubbles.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-bubbles.release.xcconfig"; path = "Pods/Target Support Files/Pods-bubbles/Pods-bubbles.release.xcconfig"; sourceTree = "<group>"; };
-		50956D6E8A9EA741BBE2D0F9 /* Pods_bubbles.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_bubbles.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		7A336176A115FB3682CD9C02 /* Pods_bubbles.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_bubbles.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		A7247E1120022B2200BE4947 /* bubbles-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "bubbles-Bridging-Header.h"; sourceTree = "<group>"; };
 		A7247E1220022B2300BE4947 /* engine_glue.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = engine_glue.cpp; sourceTree = "<group>"; };
 		A7247E1320022B2300BE4947 /* engine_glue.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = engine_glue.hpp; sourceTree = "<group>"; };
@@ -47,7 +47,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				1EA31874CBCD049CC9A29843 /* Pods_bubbles.framework in Frameworks */,
+				EE7A96F325B2CCADADD5996E /* Pods_bubbles.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -57,7 +57,7 @@
 		09F58531FC3257E501FAFF6C /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				50956D6E8A9EA741BBE2D0F9 /* Pods_bubbles.framework */,
+				7A336176A115FB3682CD9C02 /* Pods_bubbles.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -121,8 +121,7 @@
 				A7802B9D2001067B004660D4 /* Sources */,
 				A7802B9E2001067B004660D4 /* Frameworks */,
 				A7802B9F2001067B004660D4 /* Resources */,
-				A1C0160BB6757D2C5DA1387E /* [CP] Embed Pods Frameworks */,
-				03B319C39EE6BCABFE96A2BD /* [CP] Copy Pods Resources */,
+				60137AC3662FC41F93A9AD8B /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
@@ -140,7 +139,7 @@
 			isa = PBXProject;
 			attributes = {
 				LastSwiftUpdateCheck = 0920;
-				LastUpgradeCheck = 0920;
+				LastUpgradeCheck = 1000;
 				ORGANIZATIONNAME = "Valentin Palade";
 				TargetAttributes = {
 					A7802BA02001067B004660D4 = {
@@ -185,21 +184,6 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		03B319C39EE6BCABFE96A2BD /* [CP] Copy Pods Resources */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputPaths = (
-			);
-			name = "[CP] Copy Pods Resources";
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${SRCROOT}/Pods/Target Support Files/Pods-bubbles/Pods-bubbles-resources.sh\"\n";
-			showEnvVarsInLog = 0;
-		};
 		35298994821A0E8C016D082B /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
@@ -218,10 +202,12 @@
 			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
 			showEnvVarsInLog = 0;
 		};
-		A1C0160BB6757D2C5DA1387E /* [CP] Embed Pods Frameworks */ = {
+		60137AC3662FC41F93A9AD8B /* [CP] Embed Pods Frameworks */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+			);
+			inputFileListPaths = (
 			);
 			inputPaths = (
 				"${SRCROOT}/Pods/Target Support Files/Pods-bubbles/Pods-bubbles-frameworks.sh",
@@ -231,6 +217,8 @@
 				"${BUILT_PRODUCTS_DIR}/snappy/snappy.framework",
 			);
 			name = "[CP] Embed Pods Frameworks";
+			outputFileListPaths = (
+			);
 			outputPaths = (
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/openssl.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/BubblesEngine.framework",
@@ -293,6 +281,7 @@
 				CLANG_WARN_BOOL_CONVERSION = YES;
 				CLANG_WARN_COMMA = YES;
 				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
 				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
 				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
 				CLANG_WARN_EMPTY_BODY = YES;
@@ -300,6 +289,7 @@
 				CLANG_WARN_INFINITE_RECURSION = YES;
 				CLANG_WARN_INT_CONVERSION = YES;
 				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
 				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
 				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
@@ -350,6 +340,7 @@
 				CLANG_WARN_BOOL_CONVERSION = YES;
 				CLANG_WARN_COMMA = YES;
 				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
 				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
 				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
 				CLANG_WARN_EMPTY_BODY = YES;
@@ -357,6 +348,7 @@
 				CLANG_WARN_INFINITE_RECURSION = YES;
 				CLANG_WARN_INT_CONVERSION = YES;
 				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
 				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
 				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
