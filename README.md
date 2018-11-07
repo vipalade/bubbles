@@ -1,8 +1,8 @@
 # bubbles - sample client-server application using SolidFrame
 
-Exemplifies how to use SolidFrame mpipc library in a secured (SSL) client-server scenario.
+Exemplifies how to use SolidFrame mprpc library in a secured (SSL) client-server scenario.
 
- * [client/android](client/android) is an example of how to use SolidFrame framework and especially the solid::frame::mpipc library allong with BoringSSL and Snappy in an Android Java application.
+ * [client/android](client/android) is an example of how to use SolidFrame framework and especially the solid::frame::mprpc library allong with BoringSSL and Snappy in an Android Java application.
  * [client/ios](client/ios) is and example of how to use SolidFrame allong with BoringSSL and Snappy as CocoaPods in an iOS Swift application.
 
 ## Insight
@@ -40,7 +40,7 @@ The frontend is implemented using either
  * Swift for iOS application.
 
 The backend engine is implemented in C++ and relies on
- * **solid_frame** libraries (especially **solid_frame_mpipc** for communication)
+ * **solid_frame** libraries (especially **solid_frame_mprpc** for communication)
  * **OpenSSL** (for desktop) / **BoringSSL** (for Android and iOS) - to secure the communication
  * **snappy** for all versions - to compress communication
 
@@ -54,7 +54,7 @@ The backend engine is implemented in C++ and relies on
 
 #### Implementation
 
-The server is a C++ application using **solid_frame** libraries (most important **solid_frame_mpipc** for communication), **OpenSSL** to secure communication and **boost** for parsing command line parameters.
+The server is a C++ application using **solid_frame** libraries (most important **solid_frame_mprpc** for communication), **OpenSSL** to secure communication and **boost** for parsing command line parameters.
 
 ### Workflow
  * the client connects to the server and registers on a room using either a given color or requesting a new color

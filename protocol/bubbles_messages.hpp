@@ -1,16 +1,16 @@
 #ifndef BUBBLES_MESSAGES_HPP
 #define BUBBLES_MESSAGES_HPP
 
-#include "solid/frame/mpipc/mpipcmessage.hpp"
-#include "solid/frame/mpipc/mpipccontext.hpp"
-#include "solid/frame/mpipc/mpipcprotocol_serialization_v2.hpp"
+#include "solid/frame/mprpc/mprpcmessage.hpp"
+#include "solid/frame/mprpc/mprpccontext.hpp"
+#include "solid/frame/mprpc/mprpcprotocol_serialization_v2.hpp"
 
 #include <vector>
 #include <deque>
 
 namespace bubbles{
 
-struct RegisterRequest: solid::frame::mpipc::Message{
+struct RegisterRequest: solid::frame::mprpc::Message{
     std::string         room_name;
     uint32_t            rgb_color;
 
@@ -26,7 +26,7 @@ struct RegisterRequest: solid::frame::mpipc::Message{
     }
 };
 
-struct RegisterResponse: solid::frame::mpipc::Message{
+struct RegisterResponse: solid::frame::mprpc::Message{
     uint32_t        error;
     uint32_t        rgb_color;
     std::string     message;
@@ -35,7 +35,7 @@ struct RegisterResponse: solid::frame::mpipc::Message{
 
     RegisterResponse(
         const RegisterRequest &_rrec, uint32_t _err, const std::string &_msg
-    ):solid::frame::mpipc::Message(_rrec), error(_err), rgb_color(0), message(_msg){}
+    ):solid::frame::mprpc::Message(_rrec), error(_err), rgb_color(0), message(_msg){}
 
     RegisterResponse(
         const RegisterRequest &_rrec, uint32_t _rgb_color
@@ -138,7 +138,7 @@ struct EventStub{
 };
 
 //Push notification - no guarantee and no feedback for delivery
-struct EventsNotification: solid::frame::mpipc::Message{
+struct EventsNotification: solid::frame::mprpc::Message{
 
     using EventStubDequeT   = std::deque<EventStub>;
 
@@ -173,7 +173,7 @@ struct EventsNotification: solid::frame::mpipc::Message{
 struct EventsNotificationRequest: EventsNotification{
 };
 
-struct EventsNotificationResponse: solid::frame::mpipc::Message{
+struct EventsNotificationResponse: solid::frame::mprpc::Message{
     uint32_t        error;
     uint32_t        success_count;
     uint32_t        fail_count;
@@ -187,7 +187,7 @@ struct EventsNotificationResponse: solid::frame::mpipc::Message{
         uint32_t _success_count,
         uint32_t _fail_count,
         const std::string &_rmsg = ""
-    ):  solid::frame::mpipc::Message(_req), error(_error),
+    ):  solid::frame::mprpc::Message(_req), error(_error),
         success_count(_success_count), fail_count(_fail_count), message(_rmsg){}
 
     SOLID_PROTOCOL_V2(_s, _rthis, _rctx, _name){
@@ -198,7 +198,7 @@ struct EventsNotificationResponse: solid::frame::mpipc::Message{
     }
 };
 
-using ProtocolT = solid::frame::mpipc::serialization_v2::Protocol<uint8_t>;
+using ProtocolT = solid::frame::mprpc::serialization_v2::Protocol<uint8_t>;
 
 template <class R>
 inline void protocol_setup(R _r, ProtocolT& _rproto)

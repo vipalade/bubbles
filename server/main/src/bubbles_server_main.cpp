@@ -5,10 +5,10 @@
 
 #include "solid/frame/aio/aioresolver.hpp"
 
-#include "solid/frame/mpipc/mpipcservice.hpp"
-#include "solid/frame/mpipc/mpipcconfiguration.hpp"
-#include "solid/frame/mpipc/mpipcsocketstub_openssl.hpp"
-#include "solid/frame/mpipc/mpipccompression_snappy.hpp"
+#include "solid/frame/mprpc/mprpcservice.hpp"
+#include "solid/frame/mprpc/mprpcconfiguration.hpp"
+#include "solid/frame/mprpc/mprpcsocketstub_openssl.hpp"
+#include "solid/frame/mprpc/mprpccompression_snappy.hpp"
 
 #include "protocol/bubbles_messages.hpp"
 
@@ -58,7 +58,7 @@ struct MessageSetup {
     {
         Engine &eng = engine;
         auto lambda = [&eng](
-            frame::mpipc::ConnectionContext &_rctx,
+            frame::mprpc::ConnectionContext &_rctx,
             std::shared_ptr<T> &_rsent_msg_ptr,
             std::shared_ptr<T> &_rrecv_msg_ptr,
             ErrorConditionT const &_rerror
@@ -113,7 +113,7 @@ int main(int argc, char *argv[]){
 
         bubbles::server::Engine     engine(bubbles::server::EngineConfiguration{});
         frame::Manager              manager;
-        frame::mpipc::ServiceT      ipcservice(manager);
+        frame::mprpc::ServiceT      ipcservice(manager);
         ErrorConditionT             err;
 
         err = scheduler.start(1);
@@ -125,7 +125,7 @@ int main(int argc, char *argv[]){
 
         {
             auto                        proto = bubbles::ProtocolT::create();
-            frame::mpipc::Configuration cfg(scheduler, proto);
+            frame::mprpc::Configuration cfg(scheduler, proto);
 
             bubbles::protocol_setup(bubbles::server::MessageSetup(std::ref(engine)), *proto);
             
@@ -139,13 +139,13 @@ int main(int argc, char *argv[]){
             cfg.server.listener_address_str += ':';
             cfg.server.listener_address_str += params.listener_port;
 
-            cfg.server.connection_start_state = frame::mpipc::ConnectionState::Active;
+            cfg.server.connection_start_state = frame::mprpc::ConnectionState::Active;
             //cfg.pool_max_message_queue_size
             {
-                auto connection_stop_lambda = [&engine](frame::mpipc::ConnectionContext &_ctx){
+                auto connection_stop_lambda = [&engine](frame::mprpc::ConnectionContext &_ctx){
                     engine.onConnectionStop(_ctx);
                 };
-                auto connection_start_lambda = [&engine](frame::mpipc::ConnectionContext &_ctx){
+                auto connection_start_lambda = [&engine](frame::mprpc::ConnectionContext &_ctx){
                     engine.onConnectionStart(_ctx);
                 };
                 cfg.connection_stop_fnc = std::move(connection_stop_lambda);
@@ -153,7 +153,7 @@ int main(int argc, char *argv[]){
             }
 
             if(params.secure){
-                frame::mpipc::openssl::setup_server(
+                frame::mprpc::openssl::setup_server(
                     cfg,
                     [](frame::aio::openssl::Context &_rctx) -> ErrorCodeT{
                         _rctx.loadVerifyFile("bubbles-ca-cert.pem"/*"/etc/pki/tls/certs/ca-bundle.crt"*/);
@@ -161,12 +161,12 @@ int main(int argc, char *argv[]){
                         _rctx.loadPrivateKeyFile("bubbles-server-key.pem");
                         return ErrorCodeT();
                     },
-                    frame::mpipc::openssl::NameCheckSecureStart{"bubbles-client"}//does nothing - OpenSSL does not check for hostname on SSL_accept
+                    frame::mprpc::openssl::NameCheckSecureStart{"bubbles-client"}//does nothing - OpenSSL does not check for hostname on SSL_accept
                 );
             }
 
             if(params.compress){
-                frame::mpipc::snappy::setup(cfg);
+                frame::mprpc::snappy::setup(cfg);
             }
 
             err = ipcservice.reconfigure(std::move(cfg));

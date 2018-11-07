@@ -7,8 +7,8 @@
 #include <unordered_set>
 
 #include "bubbles_server_engine.hpp"
-#include "solid/frame/mpipc/mpipccontext.hpp"
-#include "solid/frame/mpipc/mpipcservice.hpp"
+#include "solid/frame/mprpc/mprpccontext.hpp"
+#include "solid/frame/mprpc/mprpcservice.hpp"
 #include "solid/system/log.hpp"
 #include "solid/system/cassert.hpp"
 #include "solid/utility/any.hpp"
@@ -50,7 +50,7 @@ struct ConnectionData{
     size_t      room_entry_index;
 };
 
-using ConnectionId = solid::frame::mpipc::RecipientId;
+using ConnectionId = solid::frame::mprpc::RecipientId;
 
 struct ConnectionStub{
 
@@ -175,13 +175,13 @@ void Engine::plotStatistics(std::ostream &_ros){
     _ros<<"Max per connection dropped messages: "<<d.max_dropped_message_count<<endl;
 }
 
-void Engine::onConnectionStart(solid::frame::mpipc::ConnectionContext &_rctx){
+void Engine::onConnectionStart(solid::frame::mprpc::ConnectionContext &_rctx){
     solid_log(generic_logger, Info, _rctx.recipientId());
 
     _rctx.any() = solid::make_any<0, ConnectionData>();
 }
 
-void Engine::onConnectionStop(solid::frame::mpipc::ConnectionContext &_rctx){
+void Engine::onConnectionStop(solid::frame::mprpc::ConnectionContext &_rctx){
     solid_log(generic_logger, Info, _rctx.recipientId()<<' '<<_rctx.error().message());
 
     ConnectionData *pcon_data = _rctx.any().cast<ConnectionData>();
@@ -192,7 +192,7 @@ void Engine::onConnectionStop(solid::frame::mpipc::ConnectionContext &_rctx){
 }
 
 void Engine::onMessage(
-    solid::frame::mpipc::ConnectionContext &_rctx,
+    solid::frame::mprpc::ConnectionContext &_rctx,
     std::shared_ptr<RegisterRequest> &_rsent_msg_ptr,
     std::shared_ptr<RegisterRequest> &_rrecv_msg_ptr,
     solid::ErrorConditionT const &_rerror
@@ -213,7 +213,7 @@ void Engine::onMessage(
             
             solid_check(!(err = _rctx.service().sendMessage(
                 _rctx.recipientId(),
-                std::make_shared<RegisterResponse>(*_rrecv_msg_ptr, rgb_color), {frame::mpipc::MessageFlagsE::Synchronous}
+                std::make_shared<RegisterResponse>(*_rrecv_msg_ptr, rgb_color), {frame::mprpc::MessageFlagsE::Synchronous}
             )), "failed send message: "<<err.message());
             return;
         }
@@ -223,13 +223,13 @@ void Engine::onMessage(
 
     solid_check(!(err = _rctx.service().sendResponse(
         _rctx.recipientId(),
-        std::make_shared<RegisterResponse>(*_rrecv_msg_ptr, error_id, error_message(error_id)), {frame::mpipc::MessageFlagsE::Synchronous}
+        std::make_shared<RegisterResponse>(*_rrecv_msg_ptr, error_id, error_message(error_id)), {frame::mprpc::MessageFlagsE::Synchronous}
     )), "failed send message: "<<err.message());
-    _rctx.service().delayCloseConnectionPool(_rctx.recipientId(), [](frame::mpipc::ConnectionContext &/*_rctx*/){});
+    _rctx.service().delayCloseConnectionPool(_rctx.recipientId(), [](frame::mprpc::ConnectionContext &/*_rctx*/){});
 }
 
 void Engine::onMessage(
-    solid::frame::mpipc::ConnectionContext &_rctx,
+    solid::frame::mprpc::ConnectionContext &_rctx,
     std::shared_ptr<RegisterResponse> &_rsent_msg_ptr,
     std::shared_ptr<RegisterResponse> &_rrecv_msg_ptr,
     solid::ErrorConditionT const &_rerror
@@ -244,7 +244,7 @@ void Engine::onMessage(
 }
 
 void Engine::onMessage(
-    solid::frame::mpipc::ConnectionContext &_rctx,
+    solid::frame::mprpc::ConnectionContext &_rctx,
     std::shared_ptr<EventsNotification> &_rsent_msg_ptr,
     std::shared_ptr<EventsNotification> &_rrecv_msg_ptr,
     solid::ErrorConditionT const &_rerror
@@ -277,7 +277,7 @@ void Engine::onMessage(
                     rcon.pending_count += _rrecv_msg_ptr->event_stubs.size();
                     _rrecv_msg_ptr->clearStateFlags();
                     solid_log(generic_logger, Info, i<<" pend_cnt = "<<rcon.pending_count<<" eventsz = "<<_rrecv_msg_ptr->event_stub.events.size());
-                    solid::ErrorConditionT err = _rctx.service().sendMessage(rcon.id, _rrecv_msg_ptr, {frame::mpipc::MessageFlagsE::Synchronous});
+                    solid::ErrorConditionT err = _rctx.service().sendMessage(rcon.id, _rrecv_msg_ptr, {frame::mprpc::MessageFlagsE::Synchronous});
                     if(err){
                         solid_log(generic_logger, Warning, rcon_data.room_entry_index<<" failed send message: "<<err.message());
                         rcon.pending_count -= (1 + _rrecv_msg_ptr->event_stub.events.size());
@@ -310,7 +310,7 @@ void Engine::onMessage(
 }
 
 void Engine::fetchLastEvents(
-    solid::frame::mpipc::ConnectionContext &_rctx, ConnectionData &_rcon_data,
+    solid::frame::mprpc::ConnectionContext &_rctx, ConnectionData &_rcon_data,
     std::shared_ptr<EventsNotification> &&_msg_ptr
 ){
     RoomStub            &room = d.rooms[_rcon_data.room_index];
@@ -354,7 +354,7 @@ void Engine::fetchLastEvents(
     if(_msg_ptr->event_stubs.size() or not _msg_ptr->event_stub.empty()){
         rcrtcon.pending_count += _msg_ptr->event_stubs.size();
         rcrtcon.pending_count += (1 + _msg_ptr->event_stub.events.size());
-        solid::ErrorConditionT  err =_rctx.service().sendMessage(rcrtcon.id, _msg_ptr, {frame::mpipc::MessageFlagsE::Synchronous});
+        solid::ErrorConditionT  err =_rctx.service().sendMessage(rcrtcon.id, _msg_ptr, {frame::mprpc::MessageFlagsE::Synchronous});
         if(err){
             solid_log(generic_logger, Warning, _rcon_data.room_entry_index<<" failed send message: "<<err.message());
             rcrtcon.pending_count -= _msg_ptr->event_stubs.size();
@@ -364,7 +364,7 @@ void Engine::fetchLastEvents(
 }
 
 void Engine::onMessage(
-    solid::frame::mpipc::ConnectionContext &_rctx,
+    solid::frame::mprpc::ConnectionContext &_rctx,
     std::shared_ptr<EventsNotificationRequest> &_rsent_msg_ptr,
     std::shared_ptr<EventsNotificationRequest> &_rrecv_msg_ptr,
     solid::ErrorConditionT const &_rerror
@@ -374,7 +374,7 @@ void Engine::onMessage(
 }
 
 void Engine::onMessage(
-    solid::frame::mpipc::ConnectionContext &_rctx,
+    solid::frame::mprpc::ConnectionContext &_rctx,
     std::shared_ptr<EventsNotificationResponse> &_rsent_msg_ptr,
     std::shared_ptr<EventsNotificationResponse> &_rrecv_msg_ptr,
     solid::ErrorConditionT const &_rerror
@@ -384,7 +384,7 @@ void Engine::onMessage(
 }
 
 uint32_t Engine::registerConnection(
-    solid::frame::mpipc::ConnectionContext &_rctx,
+    solid::frame::mprpc::ConnectionContext &_rctx,
     ConnectionData &_rcon_data,
     const RegisterRequest &_rreq,
     uint32_t &_rrgb_color
@@ -463,7 +463,7 @@ uint32_t Engine::registerConnection(
     return 0;
 }
 
-void Engine::unregisterConnection(solid::frame::mpipc::ConnectionContext &_rctx, ConnectionData &_rcon_data){
+void Engine::unregisterConnection(solid::frame::mprpc::ConnectionContext &_rctx, ConnectionData &_rcon_data){
     solid_log(generic_logger, Warning, " room: "<<_rcon_data.room_index<<" connection: "<<_rcon_data.room_entry_index);
     RoomStub    &room = d.rooms[_rcon_data.room_index];
     {
@@ -487,7 +487,7 @@ void Engine::unregisterConnection(solid::frame::mpipc::ConnectionContext &_rctx,
             ConnectionStub &rcon = room.connections[i];
             if(i != _rcon_data.room_entry_index){
                 rcon.pending_count += 1;
-                solid::ErrorConditionT err = _rctx.service().sendMessage(rcon.id, close_msg_ptr, {frame::mpipc::MessageFlagsE::Synchronous});
+                solid::ErrorConditionT err = _rctx.service().sendMessage(rcon.id, close_msg_ptr, {frame::mprpc::MessageFlagsE::Synchronous});
                 if(err){
                     rcon.pending_count -= 1;
                 }

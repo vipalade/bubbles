@@ -19,11 +19,11 @@
 #include "solid/frame/aio/openssl/aiosecurecontext.hpp"
 #include "solid/frame/aio/openssl/aiosecuresocket.hpp"
 
-#include "solid/frame/mpipc/mpipcservice.hpp"
-#include "solid/frame/mpipc/mpipcconfiguration.hpp"
-#include "solid/frame/mpipc/mpipcprotocol_serialization_v2.hpp"
-#include "solid/frame/mpipc/mpipcsocketstub_openssl.hpp"
-#include "solid/frame/mpipc/mpipccompression_snappy.hpp"
+#include "solid/frame/mprpc/mprpcservice.hpp"
+#include "solid/frame/mprpc/mprpcconfiguration.hpp"
+#include "solid/frame/mprpc/mprpcprotocol_serialization_v2.hpp"
+#include "solid/frame/mprpc/mprpcsocketstub_openssl.hpp"
+#include "solid/frame/mprpc/mprpccompression_snappy.hpp"
 
 #include "client/engine/bubbles_client_engine.hpp"
 #include "protocol/bubbles_messages.hpp"
@@ -68,7 +68,7 @@ namespace {
 
 
         frame::Manager          m;
-        frame::mpipc::ServiceT  ipcsvc;
+        frame::mprpc::ServiceT  ipcsvc;
         frame::ServiceT         svc;
         FunctionWorkPool        fwp;
         frame::aio::Resolver    resolver;
@@ -102,7 +102,7 @@ namespace bubbles{
             {
                 Engine &eng = engine;
                 auto lambda = [&eng](
-                    frame::mpipc::ConnectionContext &_rctx,
+                    frame::mprpc::ConnectionContext &_rctx,
                     std::shared_ptr<RegisterRequest> &_rsent_msg_ptr,
                     std::shared_ptr<RegisterResponse> &_rrecv_msg_ptr,
                     ErrorConditionT const &_rerror
@@ -116,7 +116,7 @@ namespace bubbles{
             {
                 Engine &eng = engine;
                 auto lambda = [&eng](
-                    frame::mpipc::ConnectionContext &_rctx,
+                    frame::mprpc::ConnectionContext &_rctx,
                     std::shared_ptr<RegisterRequest> &_rsent_msg_ptr,
                     std::shared_ptr<RegisterResponse> &_rrecv_msg_ptr,
                     ErrorConditionT const &_rerror
@@ -130,7 +130,7 @@ namespace bubbles{
             {
                 Engine &eng = engine;
                 auto lambda = [&eng](
-                    frame::mpipc::ConnectionContext &_rctx,
+                    frame::mprpc::ConnectionContext &_rctx,
                     std::shared_ptr<EventsNotificationRequest> &_rsent_msg_ptr,
                     std::shared_ptr<EventsNotificationResponse> &_rrecv_msg_ptr,
                     ErrorConditionT const &_rerror
@@ -144,7 +144,7 @@ namespace bubbles{
             {
                 Engine &eng = engine;
                 auto lambda = [&eng](
-                    frame::mpipc::ConnectionContext &_rctx,
+                    frame::mprpc::ConnectionContext &_rctx,
                     std::shared_ptr<EventsNotificationRequest> &_rsent_msg_ptr,
                     std::shared_ptr<EventsNotificationResponse> &_rrecv_msg_ptr,
                     ErrorConditionT const &_rerror
@@ -159,7 +159,7 @@ namespace bubbles{
             {
                 Engine &eng = engine;
                 auto lambda = [&eng](
-                    frame::mpipc::ConnectionContext &_rctx,
+                    frame::mprpc::ConnectionContext &_rctx,
                     std::shared_ptr<T> &_rsent_msg_ptr,
                     std::shared_ptr<T> &_rrecv_msg_ptr,
                     ErrorConditionT const &_rerror
@@ -296,22 +296,22 @@ jboolean Java_com_example_vapa_bubbles_BubblesActivity_nativeStart(
     
     {
         auto                        proto = bubbles::ProtocolT::create();//small limits by default
-        frame::mpipc::Configuration cfg(g_ctx.aio_sch, proto);
+        frame::mprpc::Configuration cfg(g_ctx.aio_sch, proto);
 
         bubbles::protocol_setup(bubbles::client::MessageSetup(std::ref(*g_ctx.engine_ptr)), *proto);
 
-        cfg.client.name_resolve_fnc = frame::mpipc::InternetResolverF(g_ctx.resolver, "4444");
+        cfg.client.name_resolve_fnc = frame::mprpc::InternetResolverF(g_ctx.resolver, "4444");
 
-        cfg.client.connection_start_state = frame::mpipc::ConnectionState::Passive;
+        cfg.client.connection_start_state = frame::mprpc::ConnectionState::Passive;
 
         cfg.connection_keepalive_timeout_seconds = 30;
 
         {
-            auto connection_stop_lambda = [](frame::mpipc::ConnectionContext &_ctx){
+            auto connection_stop_lambda = [](frame::mprpc::ConnectionContext &_ctx){
                 LOGI("connection stop");
                 g_ctx.engine_ptr->onConnectionStop(_ctx);
             };
-            auto connection_start_lambda = [](frame::mpipc::ConnectionContext &_ctx){
+            auto connection_start_lambda = [](frame::mprpc::ConnectionContext &_ctx){
                 LOGI("connection start");
                 g_ctx.engine_ptr->onConnectionStart(_ctx);
             };
@@ -321,7 +321,7 @@ jboolean Java_com_example_vapa_bubbles_BubblesActivity_nativeStart(
 
         if(_secure == JNI_TRUE){
             //configure OpenSSL:
-            frame::mpipc::openssl::setup_client(
+            frame::mprpc::openssl::setup_client(
                 cfg,
                 [verify_authority_str, client_cert_str, client_key_str](frame::aio::openssl::Context &_rctx) -> ErrorCodeT {
                     _rctx.addVerifyAuthority(verify_authority_str);
@@ -329,13 +329,13 @@ jboolean Java_com_example_vapa_bubbles_BubblesActivity_nativeStart(
                     _rctx.loadPrivateKey(client_key_str);
                     return ErrorCodeT();
                 },
-                frame::mpipc::openssl::NameCheckSecureStart{"bubbles-server"}
+                frame::mprpc::openssl::NameCheckSecureStart{"bubbles-server"}
             );
         }
 
         if(_compressed == JNI_TRUE){
             //configure Snappy compression:
-            frame::mpipc::snappy::setup(cfg);
+            frame::mprpc::snappy::setup(cfg);
         }
 
         err = g_ctx.ipcsvc.reconfigure(std::move(cfg));

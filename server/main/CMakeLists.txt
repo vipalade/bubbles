@@ -38,9 +38,10 @@ add_executable (bubbles_server src/bubbles_server_main.cpp src/bubbles_server_en
 add_dependencies(bubbles_server bubbles_server_certs build_snappy)
 
 target_link_libraries (bubbles_server
-    solid_frame_mpipc
+    solid_frame_mprpc
     solid_frame_aio_openssl
     solid_serialization_v2
+    ${OPENSSL_LIBRARIES}
     ${Boost_PROGRAM_OPTIONS_LIBRARY}
     ${Boost_SYSTEM_LIBRARY}
     ${SNAPPY_LIB}

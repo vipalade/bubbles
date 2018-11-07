@@ -60,13 +60,15 @@ if(${Qt5Widgets_FOUND} AND Boost_FOUND)
     target_link_libraries(
         bubbles_client
         bubbles_client_engine
-        solid_frame_mpipc
+        solid_frame_mprpc
         solid_frame_aio_openssl
         solid_serialization_v2
+        ${OPENSSL_LIBRARIES}
         ${Boost_PROGRAM_OPTIONS_LIBRARY}
         ${Boost_SYSTEM_LIBRARY}
         Qt5::Widgets
         ${SNAPPY_LIB}
         ${SYS_BASIC_LIBS}
+        ${SYS_DYNAMIC_LOAD_LIB}
     )
 endif()

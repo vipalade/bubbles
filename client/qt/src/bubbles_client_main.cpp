@@ -11,10 +11,10 @@
 #include "solid/frame/reactor.hpp"
 #include "solid/frame/service.hpp"
 
-#include "solid/frame/mpipc/mpipcservice.hpp"
-#include "solid/frame/mpipc/mpipcconfiguration.hpp"
-#include "solid/frame/mpipc/mpipcsocketstub_openssl.hpp"
-#include "solid/frame/mpipc/mpipccompression_snappy.hpp"
+#include "solid/frame/mprpc/mprpcservice.hpp"
+#include "solid/frame/mprpc/mprpcconfiguration.hpp"
+#include "solid/frame/mprpc/mprpcsocketstub_openssl.hpp"
+#include "solid/frame/mprpc/mprpccompression_snappy.hpp"
 
 
 #include "client/engine/bubbles_client_engine.hpp"
@@ -83,7 +83,7 @@ struct MessageSetup {
     {
         Engine &eng = engine;
         auto lambda = [&eng](
-            frame::mpipc::ConnectionContext &_rctx,
+            frame::mprpc::ConnectionContext &_rctx,
             std::shared_ptr<RegisterRequest> &_rsent_msg_ptr,
             std::shared_ptr<RegisterResponse> &_rrecv_msg_ptr,
             ErrorConditionT const &_rerror
@@ -97,7 +97,7 @@ struct MessageSetup {
     {
         Engine &eng = engine;
         auto lambda = [&eng](
-            frame::mpipc::ConnectionContext &_rctx,
+            frame::mprpc::ConnectionContext &_rctx,
             std::shared_ptr<RegisterRequest> &_rsent_msg_ptr,
             std::shared_ptr<RegisterResponse> &_rrecv_msg_ptr,
             ErrorConditionT const &_rerror
@@ -111,7 +111,7 @@ struct MessageSetup {
     {
         Engine &eng = engine;
         auto lambda = [&eng](
-            frame::mpipc::ConnectionContext &_rctx,
+            frame::mprpc::ConnectionContext &_rctx,
             std::shared_ptr<EventsNotificationRequest> &_rsent_msg_ptr,
             std::shared_ptr<EventsNotificationResponse> &_rrecv_msg_ptr,
             ErrorConditionT const &_rerror
@@ -125,7 +125,7 @@ struct MessageSetup {
     {
         Engine &eng = engine;
         auto lambda = [&eng](
-            frame::mpipc::ConnectionContext &_rctx,
+            frame::mprpc::ConnectionContext &_rctx,
             std::shared_ptr<EventsNotificationRequest> &_rsent_msg_ptr,
             std::shared_ptr<EventsNotificationResponse> &_rrecv_msg_ptr,
             ErrorConditionT const &_rerror
@@ -140,7 +140,7 @@ struct MessageSetup {
     {
         Engine &eng = engine;
         auto lambda = [&eng](
-            frame::mpipc::ConnectionContext &_rctx,
+            frame::mprpc::ConnectionContext &_rctx,
             std::shared_ptr<T> &_rsent_msg_ptr,
             std::shared_ptr<T> &_rrecv_msg_ptr,
             ErrorConditionT const &_rerror
@@ -205,7 +205,7 @@ int main(int argc, char *argv[]){
     frame::Manager                      manager;
     frame::ServiceT                     service{manager};
 
-    frame::mpipc::ServiceT              ipcservice{manager};
+    frame::mprpc::ServiceT              ipcservice{manager};
     
     FunctionWorkPool                    fwp{WorkPoolConfiguration()};
     frame::aio::Resolver                resolver(fwp);
@@ -231,7 +231,7 @@ int main(int argc, char *argv[]){
 
     {
         auto                        proto = bubbles::ProtocolT::create();//small limits by default
-        frame::mpipc::Configuration cfg(aioscheduler, proto);
+        frame::mprpc::Configuration cfg(aioscheduler, proto);
 
         bubbles::protocol_setup(bubbles::client::MessageSetup(std::ref(*engine_ptr)), *proto);
         
@@ -239,17 +239,17 @@ int main(int argc, char *argv[]){
         cfg.limitContainer(256);
         cfg.limitStream(0);
         
-        cfg.client.name_resolve_fnc = frame::mpipc::InternetResolverF(resolver, params.connect_port.c_str());
+        cfg.client.name_resolve_fnc = frame::mprpc::InternetResolverF(resolver, params.connect_port.c_str());
 
-        cfg.client.connection_start_state = frame::mpipc::ConnectionState::Passive;
+        cfg.client.connection_start_state = frame::mprpc::ConnectionState::Passive;
         
         cfg.connection_keepalive_timeout_seconds = 30;
 
         {
-            auto connection_stop_lambda = [engine_ptr](frame::mpipc::ConnectionContext &_ctx){
+            auto connection_stop_lambda = [engine_ptr](frame::mprpc::ConnectionContext &_ctx){
                 engine_ptr->onConnectionStop(_ctx);
             };
-            auto connection_start_lambda = [engine_ptr](frame::mpipc::ConnectionContext &_ctx){
+            auto connection_start_lambda = [engine_ptr](frame::mprpc::ConnectionContext &_ctx){
                 engine_ptr->onConnectionStart(_ctx);
             };
             cfg.connection_stop_fnc = std::move(connection_stop_lambda);
@@ -259,7 +259,7 @@ int main(int argc, char *argv[]){
         if(params.secure){
             //configure OpenSSL:
             solid_log(generic_logger, Info, "Configure SSL ---------------------------------------");
-            frame::mpipc::openssl::setup_client(
+            frame::mprpc::openssl::setup_client(
                 cfg,
                 [](frame::aio::openssl::Context &_rctx) -> ErrorCodeT{
                     if(true){
@@ -277,12 +277,12 @@ int main(int argc, char *argv[]){
                     }
                     return ErrorCodeT();
                 },
-                frame::mpipc::openssl::NameCheckSecureStart{"bubbles-server"}
+                frame::mprpc::openssl::NameCheckSecureStart{"bubbles-server"}
             );
         }
 
         if(params.compress){
-            frame::mpipc::snappy::setup(cfg);
+            frame::mprpc::snappy::setup(cfg);
         }
 
         err = ipcservice.reconfigure(std::move(cfg));

@@ -121,7 +121,7 @@ target_link_libraries( # Specifies the target library.
         # included in the NDK.
         ${log-lib}
         bubbles_client_engine
-        solid_frame_mpipc
+        solid_frame_mprpc
         solid_frame_aio
         solid_frame_aio_openssl
         solid_frame

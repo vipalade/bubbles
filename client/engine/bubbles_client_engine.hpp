@@ -10,7 +10,7 @@
 #include <functional>
 
 namespace solid{namespace frame{
-namespace mpipc{
+namespace mprpc{
     class Service;
 }
 struct ReactorContext;
@@ -67,10 +67,10 @@ public:
     using PointerT = solid::DynamicPointer<Engine>;
 
     static PointerT create(
-        solid::frame::ServiceT &_rsvc, solid::frame::mpipc::Service &_rmpipc,
+        solid::frame::ServiceT &_rsvc, solid::frame::mprpc::Service &_rmprpc,
         const EngineConfiguration &_cfg
     ){
-        return PointerT(new Engine(_rsvc, _rmpipc, _cfg));
+        return PointerT(new Engine(_rsvc, _rmprpc, _cfg));
     }
 
     solid::ErrorConditionT start(
@@ -118,25 +118,25 @@ public:
     void getAutoPosition(int &_rx, int &_ry);
 
     void moveEvent(int _x, int _y);
-    void onConnectionStart(solid::frame::mpipc::ConnectionContext &_rctx);
-    void onConnectionStop(solid::frame::mpipc::ConnectionContext &_rctx);
+    void onConnectionStart(solid::frame::mprpc::ConnectionContext &_rctx);
+    void onConnectionStop(solid::frame::mprpc::ConnectionContext &_rctx);
 
     void onMessage(
-        solid::frame::mpipc::ConnectionContext &_rctx,
+        solid::frame::mprpc::ConnectionContext &_rctx,
         std::shared_ptr<RegisterRequest> &_rsent_msg_ptr,
         std::shared_ptr<RegisterResponse> &_rrecv_msg_ptr,
         solid::ErrorConditionT const &_rerror
     );
 
     void onMessage(
-        solid::frame::mpipc::ConnectionContext &_rctx,
+        solid::frame::mprpc::ConnectionContext &_rctx,
         std::shared_ptr<EventsNotification> &_rsent_msg_ptr,
         std::shared_ptr<EventsNotification> &_rrecv_msg_ptr,
         solid::ErrorConditionT const &_rerror
     );
 
     void onMessage(
-        solid::frame::mpipc::ConnectionContext &_rctx,
+        solid::frame::mprpc::ConnectionContext &_rctx,
         std::shared_ptr<EventsNotificationRequest> &_rsent_msg_ptr,
         std::shared_ptr<EventsNotificationResponse> &_rrecv_msg_ptr,
         solid::ErrorConditionT const &_rerror
@@ -144,7 +144,7 @@ public:
 
 private:
     Engine(
-        solid::frame::ServiceT &_rsvc, solid::frame::mpipc::Service &_rmpipc,
+        solid::frame::ServiceT &_rsvc, solid::frame::mprpc::Service &_rmprpc,
         const EngineConfiguration &_cfg
     );
     ~Engine();

@@ -1,6 +1,6 @@
 #include "client/engine/bubbles_client_engine.hpp"
-#include "solid/frame/mpipc/mpipcservice.hpp"
-#include "solid/frame/mpipc/mpipcconfiguration.hpp"
+#include "solid/frame/mprpc/mprpcservice.hpp"
+#include "solid/frame/mprpc/mprpcconfiguration.hpp"
 
 #include "solid/frame/timer.hpp"
 #include "solid/frame/reactorcontext.hpp"
@@ -67,10 +67,10 @@ struct Engine::Data{
     
     Data(
         solid::frame::ServiceT &_rsvc,
-        solid::frame::mpipc::Service &_rmpipc,
+        solid::frame::mprpc::Service &_rmprpc,
         const EngineConfiguration &_cfg,
         const frame::ObjectProxy &_proxy
-    ):  rmpipc(_rmpipc), service(_rsvc), cfg(_cfg), push_eventq_idx(0), pop_eventq_idx(1),
+    ):  rmprpc(_rmprpc), service(_rsvc), cfg(_cfg), push_eventq_idx(0), pop_eventq_idx(1),
         push_messagedq_idx(0), pop_messagedq_idx(1), read_plotdq_idx(0), write_plotdq_idx(1), read_plotdq_count(0),
         discarded_on_push(false), rgb_color(0), auto_pilot(false), timer(_proxy), auto_timer(_proxy),
         auto_crt_w(canvas_width/2), auto_crt_h(canvas_height/2), auto_mod_w(0), auto_mod_h(0), auto_frame_changed(false), auto_plot_done(true),
@@ -89,7 +89,7 @@ struct Engine::Data{
         while(eq.size()) eq.pop();
     }
 
-    frame::mpipc::Service                   &rmpipc;
+    frame::mprpc::Service                   &rmprpc;
 
     frame::ServiceT                         &service;
     string                                  server_endpoint;
@@ -111,7 +111,7 @@ struct Engine::Data{
     uint32_t                                rgb_color;
     bool                                    auto_pilot;
     Event                                   last_event;
-    std::shared_ptr<EventsNotification>     events_message_ptr;//shared_ptr beacause mpipc sendMessage uses shared_ptr
+    std::shared_ptr<EventsNotification>     events_message_ptr;//shared_ptr beacause mprpc sendMessage uses shared_ptr
     std::shared_ptr<EventsNotification>     tmp_events_message_ptr;
 
     //all functions must be called on the engine's thread
@@ -143,7 +143,7 @@ struct Engine::Data{
     std::uniform_int_distribution<int>      auto_dist_steps;
     AutoQueueT                              auto_q;
     AtomicBoolT                             paused;
-    frame::mpipc::RecipientId               mpipc_recipient;
+    frame::mprpc::RecipientId               mprpc_recipient;
 };
 
 
@@ -214,9 +214,9 @@ PlotIterator::PlotIterator(Engine &_reng):peng(&_reng){
 
 //=============================================================================
 Engine::Engine(
-    solid::frame::ServiceT &_rsvc, solid::frame::mpipc::Service &_rmpipc,
+    solid::frame::ServiceT &_rsvc, solid::frame::mprpc::Service &_rmprpc,
     const EngineConfiguration &_cfg
-):d(*(new Data(_rsvc, _rmpipc, _cfg, proxy()))){}
+):d(*(new Data(_rsvc, _rmprpc, _cfg, proxy()))){}
 
 Engine::~Engine(){
     delete &d;
@@ -342,8 +342,8 @@ void Engine::onEvent(frame::ReactorContext &_rctx, solid::Event &&_uevent) /*ove
 }
 
 void Engine::doPause(solid::frame::ReactorContext &_rctx){
-    auto lambda = [](solid::frame::mpipc::ConnectionContext &_rctx){};
-    d.rmpipc.forceCloseConnectionPool(d.mpipc_recipient, lambda);
+    auto lambda = [](solid::frame::mprpc::ConnectionContext &_rctx){};
+    d.rmprpc.forceCloseConnectionPool(d.mprpc_recipient, lambda);
 }
 
 void Engine::doResume(solid::frame::ReactorContext &_rctx){
@@ -351,7 +351,7 @@ void Engine::doResume(solid::frame::ReactorContext &_rctx){
     if(d.events_message_ptr){
         d.events_message_ptr->event_stub.event = d.last_event;
         std::shared_ptr<EventsNotification> tmp_ptr{std::move(d.events_message_ptr)};
-        d.rmpipc.sendMessage(d.server_endpoint.c_str(), tmp_ptr);
+        d.rmprpc.sendMessage(d.server_endpoint.c_str(), tmp_ptr);
     }
     //clear all events
     auto& rplotdq = d.plotdq[d.write_plotdq_idx];
@@ -371,7 +371,7 @@ void Engine::doHandleConnectionStop(solid::frame::ReactorContext &_rctx){
         d.events_message_ptr->event_stub.event = d.last_event;
 
         std::shared_ptr<EventsNotification> tmp_ptr{std::move(d.events_message_ptr)};
-        solid::ErrorConditionT  err = d.rmpipc.sendMessage(d.server_endpoint.c_str(), tmp_ptr);
+        solid::ErrorConditionT  err = d.rmprpc.sendMessage(d.server_endpoint.c_str(), tmp_ptr);
         if(err){
             solid_log(generic_logger, Error, ""<< " sendMessage error: "<<err.message());
         }
@@ -629,27 +629,27 @@ void Engine::doTrySendEvents(){
         }
 
         std::shared_ptr<EventsNotification> tmp_ptr{std::move(d.events_message_ptr)};
-        solid::ErrorConditionT  err = d.rmpipc.sendMessage(d.server_endpoint.c_str(), tmp_ptr);
+        solid::ErrorConditionT  err = d.rmprpc.sendMessage(d.server_endpoint.c_str(), tmp_ptr);
         if(err){
             solid_log(generic_logger, Error, ""<< " sendMessage error: "<<err.message());
         }
     }
 }
 
-void Engine::onConnectionStart(solid::frame::mpipc::ConnectionContext &_rctx){
+void Engine::onConnectionStart(solid::frame::mprpc::ConnectionContext &_rctx){
     solid_log(generic_logger, Info, _rctx.recipientId());
     if(!d.paused){
-        d.mpipc_recipient = _rctx.recipientId();
+        d.mprpc_recipient = _rctx.recipientId();
         auto msg_ptr = std::make_shared<RegisterRequest>(d.room_name, d.rgb_color);
         solid::ErrorConditionT  err;
-        solid_check(!(err = _rctx.service().sendMessage(_rctx.recipientId(), msg_ptr, {frame::mpipc::MessageFlagsE::WaitResponse})), "failed send message: "<<err.message());
+        solid_check(!(err = _rctx.service().sendMessage(_rctx.recipientId(), msg_ptr, {frame::mprpc::MessageFlagsE::WaitResponse})), "failed send message: "<<err.message());
     }else{
-        auto lambda = [](solid::frame::mpipc::ConnectionContext &_rctx){};
-        d.rmpipc.forceCloseConnectionPool(_rctx.recipientId(), lambda);
+        auto lambda = [](solid::frame::mprpc::ConnectionContext &_rctx){};
+        d.rmprpc.forceCloseConnectionPool(_rctx.recipientId(), lambda);
     }
 }
 
-void Engine::onConnectionStop(solid::frame::mpipc::ConnectionContext &_rctx){
+void Engine::onConnectionStop(solid::frame::mprpc::ConnectionContext &_rctx){
     solid_log(generic_logger, Info, _rctx.recipientId()<<' '<<_rctx.error().message()<<' '<<d.events_message_ptr);
     if(!d.paused){
         d.service.manager().notify(d.service.manager().id(*this), event_category.event(Events::ConnectionStopped));
@@ -667,7 +667,7 @@ void Engine::doSetAutoUpdateFunction(AutoUpdateFunctionT &&_uf){
 }
 
 void Engine::onMessage(
-    solid::frame::mpipc::ConnectionContext &_rctx,
+    solid::frame::mprpc::ConnectionContext &_rctx,
     std::shared_ptr<RegisterRequest> &_rsent_msg_ptr,
     std::shared_ptr<RegisterResponse> &_rrecv_msg_ptr,
     solid::ErrorConditionT const &_rerror
@@ -689,7 +689,7 @@ void Engine::onMessage(
         //rplotdq.clear();
         //d.event_stubdq.clear();
 
-        //after activation, the mpipc will start sending pending EventsNotification messages
+        //after activation, the mprpc will start sending pending EventsNotification messages
         _rctx.service().connectionNotifyEnterActiveState(_rctx.recipientId());
         d.service.manager().notify(d.service.manager().id(*this), generic_event_category.event(GenericEvents::Resume));
     }else if(_rrecv_msg_ptr){
@@ -700,7 +700,7 @@ void Engine::onMessage(
 }
 
 void Engine::onMessage(
-    solid::frame::mpipc::ConnectionContext &_rctx,
+    solid::frame::mprpc::ConnectionContext &_rctx,
     std::shared_ptr<EventsNotification> &_rsent_msg_ptr,
     std::shared_ptr<EventsNotification> &_rrecv_msg_ptr,
     solid::ErrorConditionT const &_rerror
@@ -728,7 +728,7 @@ void Engine::onMessage(
 }
 
 void Engine::onMessage(
-    solid::frame::mpipc::ConnectionContext &_rctx,
+    solid::frame::mprpc::ConnectionContext &_rctx,
     std::shared_ptr<EventsNotificationRequest> &_rsent_msg_ptr,
     std::shared_ptr<EventsNotificationResponse> &_rrecv_msg_ptr,
     solid::ErrorConditionT const &_rerror
