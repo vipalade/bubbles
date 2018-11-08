@@ -91,7 +91,7 @@ Pod::Spec.new do |s|
 s.preserve_paths = "client/engine", "client/engine/*.hpp", "protocol", "protocol/*.hpp"
 s.public_header_files = "client/engine/*.hpp", "protocol/*.hpp"
 s.source_files = 'client/engine/src/*.{cpp,hpp}'
-s.dependency 'SolidFrame/frame_mpipc'
+s.dependency 'SolidFrame/frame_mprpc'
 s.xcconfig = { 'HEADER_SEARCH_PATHS' => '"$(PODS_ROOT)/../../../../" "$(PODS_ROOT)/SolidFrame"',  'USER_HEADER_SEARCH_PATHS' => '"$(PODS_ROOT)/../../../../" "$(PODS_ROOT)/SolidFrame"'}
 
   # ――― Resources ―――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――― #
