@@ -67,7 +67,6 @@ if(${Qt5Widgets_FOUND} AND Boost_FOUND)
     else()
         add_executable(
             bubbles_client
-            WIN32
             ${uic_basic_gui}
         #   ${res}
             ${src_basic_gui}
