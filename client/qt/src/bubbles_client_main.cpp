@@ -168,8 +168,13 @@ bool parseArguments(Parameters &_par, int argc, char *argv[]);
 //-----------------------------------------------------------------------------
 //      main
 //-----------------------------------------------------------------------------
-
+#ifdef SOLID_ON_WINDOWS
+int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR pCmdLine, int nCmdShow){
+    int argc = 1;
+    char *argv[1] = {pCmdLine};
+#else
 int main(int argc, char *argv[]){
+#endif
     Parameters params;
     
     if(parseArguments(params, argc, argv)) return 0;

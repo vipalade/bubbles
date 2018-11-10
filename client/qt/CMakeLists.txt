@@ -48,12 +48,31 @@ if(${Qt5Widgets_FOUND} AND Boost_FOUND)
         src/bubbles_client_widget.cpp
     )
 
-    add_executable(
-        bubbles_client
-        ${uic_basic_gui}
-    #   ${res}
-        ${src_basic_gui}
-    )
+    if(WIN32)  
+        add_executable(
+            bubbles_client
+            WIN32
+            ${uic_basic_gui}
+        #   ${res}
+            ${src_basic_gui}
+        )
+    elseif(APPLE)
+        add_executable(
+            bubbles_client
+            MACOSX_BUNDLE
+            ${uic_basic_gui}
+        #   ${res}
+            ${src_basic_gui}
+        )
+    else()
+        add_executable(
+            bubbles_client
+            WIN32
+            ${uic_basic_gui}
+        #   ${res}
+            ${src_basic_gui}
+        )
+    endif()
 
     add_dependencies(bubbles_client bubbles_client_certs build_snappy)
 
