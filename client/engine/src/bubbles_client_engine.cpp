@@ -642,7 +642,7 @@ void Engine::onConnectionStart(solid::frame::mprpc::ConnectionContext &_rctx){
         d.mprpc_recipient = _rctx.recipientId();
         auto msg_ptr = std::make_shared<RegisterRequest>(d.room_name, d.rgb_color);
         solid::ErrorConditionT  err;
-        solid_check(!(err = _rctx.service().sendMessage(_rctx.recipientId(), msg_ptr, {frame::mprpc::MessageFlagsE::WaitResponse})), "failed send message: "<<err.message());
+        solid_check(!(err = _rctx.service().sendMessage(_rctx.recipientId(), msg_ptr, {frame::mprpc::MessageFlagsE::AwaitResponse})), "failed send message: "<<err.message());
     }else{
         auto lambda = [](solid::frame::mprpc::ConnectionContext &_rctx){};
         d.rmprpc.forceCloseConnectionPool(_rctx.recipientId(), lambda);
