@@ -2,7 +2,7 @@
 #define BUBBLES_CLIENT_ENGINE_HPP
 
 #include "protocol/bubbles_messages.hpp"
-#include "solid/frame/object.hpp"
+#include "solid/frame/actor.hpp"
 #include "solid/frame/scheduler.hpp"
 #include "solid/frame/reactor.hpp"
 #include "solid/frame/service.hpp"
@@ -59,7 +59,7 @@ private:
     Engine      *peng;
 };
 
-class Engine: public solid::Dynamic<Engine, solid::frame::Object>{
+class Engine: public solid::Dynamic<Engine, solid::frame::Actor>{
     using ExitFunctionT = std::function<void()>;
     using GuiUpdateFunctionT = std::function<void()>;
     using AutoUpdateFunctionT = std::function<void()>;

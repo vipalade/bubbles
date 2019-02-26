@@ -212,7 +212,7 @@ int main(int argc, char *argv[]){
 
     frame::mprpc::ServiceT              ipcservice{manager};
     
-    FunctionWorkPool                    fwp{WorkPoolConfiguration()};
+    FunctionWorkPool<>                  fwp{WorkPoolConfiguration()};
     frame::aio::Resolver                resolver(fwp);
 
     ErrorConditionT                     err;
@@ -220,19 +220,9 @@ int main(int argc, char *argv[]){
 
     bubbles::client::Widget             widget{engine_ptr};
 
-    err = aioscheduler.start(1);
+    aioscheduler.start(1);
 
-    if(err){
-        cout<<"Error starting aio scheduler: "<<err.message()<<endl;
-        return 1;
-    }
-    
-    err = scheduler.start(1);
-
-    if(err){
-        cout<<"Error starting scheduler: "<<err.message()<<endl;
-        return 1;
-    }
+    scheduler.start(1);
 
     {
         auto                        proto = bubbles::ProtocolT::create();//small limits by default
@@ -290,12 +280,8 @@ int main(int argc, char *argv[]){
             frame::mprpc::snappy::setup(cfg);
         }
 
-        err = ipcservice.reconfigure(std::move(cfg));
+        ipcservice.start(std::move(cfg));
 
-        if(err){
-            cout<<"Error starting ipcservice: "<<err.message()<<endl;
-            return 1;
-        }
     }
 
     err = engine_ptr->start(scheduler, params.connect_endpoint, params.room_name, params.auto_pilot);

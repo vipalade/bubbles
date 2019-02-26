@@ -69,7 +69,7 @@ struct Engine::Data{
         solid::frame::ServiceT &_rsvc,
         solid::frame::mprpc::Service &_rmprpc,
         const EngineConfiguration &_cfg,
-        const frame::ObjectProxy &_proxy
+        const frame::ActorProxy &_proxy
     ):  rmprpc(_rmprpc), service(_rsvc), cfg(_cfg), push_eventq_idx(0), pop_eventq_idx(1),
         push_messagedq_idx(0), pop_messagedq_idx(1), read_plotdq_idx(0), write_plotdq_idx(1), read_plotdq_count(0),
         discarded_on_push(false), rgb_color(0), auto_pilot(false), timer(_proxy), auto_timer(_proxy),
@@ -233,13 +233,13 @@ solid::ErrorConditionT Engine::start(
     solid::ErrorConditionT                  err;
 
     if(!this->isRunning()){
-        solid::DynamicPointer<frame::Object>    objptr(this);//its save - pointer count is kept by this pointer
+        solid::DynamicPointer<frame::Actor>    actptr(this);//its save - pointer count is kept by this pointer
         d.server_endpoint = _server_endpoint;
         d.room_name = _room_name;
         d.auto_pilot = _auto_pilot;
         d.rgb_color = _rgb_color;
 
-        _rsched.startObject(objptr, d.service, solid::generic_event_category.event(solid::GenericEvents::Start), err);
+        _rsched.startActor(actptr, d.service, solid::generic_event_category.event(solid::GenericEvents::Start), err);
     }
     return err;
 }
