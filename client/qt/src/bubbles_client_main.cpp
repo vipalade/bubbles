@@ -212,8 +212,8 @@ int main(int argc, char *argv[]){
 
     frame::mprpc::ServiceT              ipcservice{manager};
     
-    FunctionWorkPool<>                  fwp{WorkPoolConfiguration()};
-    frame::aio::Resolver                resolver(fwp);
+    CallPool<void()>                    cwp{WorkPoolConfiguration(), 1};
+    frame::aio::Resolver                resolver(cwp);
 
     ErrorConditionT                     err;
     bubbles::client::Engine::PointerT   engine_ptr{bubbles::client::Engine::create(service, ipcservice, bubbles::client::EngineConfiguration{})};

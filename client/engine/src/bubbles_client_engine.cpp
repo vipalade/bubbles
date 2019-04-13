@@ -239,7 +239,7 @@ solid::ErrorConditionT Engine::start(
         d.auto_pilot = _auto_pilot;
         d.rgb_color = _rgb_color;
 
-        _rsched.startActor(actptr, d.service, solid::generic_event_category.event(solid::GenericEvents::Start), err);
+        _rsched.startActor(std::move(actptr), d.service, solid::generic_event_category.event(solid::GenericEvents::Start), err);
     }
     return err;
 }
