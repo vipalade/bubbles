@@ -14,7 +14,7 @@ android {
             cmake {
                 arguments "-DANDROID_STL=c++_shared"//"-DANDROID_NATIVE_API_LEVEL=21" is needed to build boringssl on arm64-v8a
                                                     //but it still does not work: https://boringssl.googlesource.com/boringssl/+/HEAD/BUILDING.md#assembling-armv8-with-clang
-                cppFlags "-std=c++11 -frtti -fexceptions"
+                cppFlags "-std=c++14 -frtti -fexceptions"
                 //abiFilters "armeabi-v7a", "x86", "arm64-v8a", "x86_64", "armeabi"
                 abiFilters "armeabi-v7a", "x86"
                 targets "native-lib"

@@ -11,7 +11,7 @@
 #include "solid/frame/reactor.hpp"
 
 #include "solid/frame/aio/aioreactor.hpp"
-#include "solid/frame/aio/aioobject.hpp"
+#include "solid/frame/aio/aioactor.hpp"
 #include "solid/frame/aio/aiolistener.hpp"
 #include "solid/frame/aio/aiotimer.hpp"
 #include "solid/frame/aio/aioresolver.hpp"
@@ -49,11 +49,6 @@ namespace {
     using PlotIteratorT = bubbles::client::PlotIterator;
 
     struct Context {
-        Context(
-
-        ):  vm(nullptr), done(false), started(false), bubblesActivityClz(nullptr), bubblesActivityObj(nullptr),
-            m{}, ipcsvc(m), svc(m), fwp(WorkPoolConfiguration()), resolver(fwp){}
-
         JavaVM                  *vm;
         bool                    done;
         bool                    started;
@@ -70,10 +65,15 @@ namespace {
         frame::Manager          m;
         frame::mprpc::ServiceT  ipcsvc;
         frame::ServiceT         svc;
-        FunctionWorkPool        fwp;
+        CallPool<void()>        cwp;
         frame::aio::Resolver    resolver;
         BubblesEnginePointerT   engine_ptr;
         PlotIteratorT           plotit;
+
+        Context(
+
+        ):  vm(nullptr), done(false), started(false), bubblesActivityClz(nullptr), bubblesActivityObj(nullptr),
+            m{}, ipcsvc(m), svc(m), cwp(WorkPoolConfiguration(), 1), resolver(cwp){}
     }g_ctx;
 
     thread_local JNIEnv                  *local_java_env = nullptr;
@@ -278,21 +278,20 @@ jboolean Java_com_example_vapa_bubbles_BubblesActivity_nativeStart(
         g_ctx.vm->DetachCurrentThread();
     };
 
-    err = g_ctx.sch.start(std::move(thr_enter), std::move(thr_exit), 1);
-
-    if(err){
-        //cout<<"Error starting aio scheduler: "<<err.message()<<endl;
-        LOGE("native: Error starting scheduler: %s",err.message().c_str());
+    try {
+        g_ctx.sch.start(std::move(thr_enter), std::move(thr_exit), 1);
+    }catch(std::exception &e){
+        LOGE("native: Error starting scheduler: %s", e.what());
         return JNI_FALSE;
     }
 
-    err = g_ctx.aio_sch.start(1);
-
-    if(err){
-        //cout<<"Error starting aio scheduler: "<<err.message()<<endl;
-        LOGE("native: Error starting aio scheduler: %s",err.message().c_str());
+    try {
+        g_ctx.aio_sch.start(1);
+    }catch(std::exception &e){
+        LOGE("native: Error starting aio scheduler: %s",e.what());
         return JNI_FALSE;
     }
+
     
     {
         auto                        proto = bubbles::ProtocolT::create();//small limits by default
@@ -337,11 +336,10 @@ jboolean Java_com_example_vapa_bubbles_BubblesActivity_nativeStart(
             //configure Snappy compression:
             frame::mprpc::snappy::setup(cfg);
         }
-
-        err = g_ctx.ipcsvc.reconfigure(std::move(cfg));
-
-        if(err){
-            LOGE("Error starting ipcservice: %s",err.message().c_str());
+        try {
+            g_ctx.ipcsvc.start(std::move(cfg));
+        }catch(std::exception &e){
+            LOGE("Error starting ipcservice: %s",e.what());
             return JNI_FALSE;
         }
     }
