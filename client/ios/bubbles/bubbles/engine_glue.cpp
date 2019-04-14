@@ -14,7 +14,7 @@
 #include "solid/frame/reactor.hpp"
 
 #include "solid/frame/aio/aioreactor.hpp"
-#include "solid/frame/aio/aioobject.hpp"
+#include "solid/frame/aio/aioactor.hpp"
 #include "solid/frame/aio/aiolistener.hpp"
 #include "solid/frame/aio/aiotimer.hpp"
 #include "solid/frame/aio/aioresolver.hpp"
@@ -43,11 +43,6 @@ namespace {
     using PlotIteratorT = bubbles::client::PlotIterator;
     
     struct Context {
-        Context(
-        
-        ): done(false), started(false),
-        m{}, ipcsvc(m), svc(m), fwp(WorkPoolConfiguration()), resolver(fwp){}
-        
         bool                    done;
         bool                    started;
         
@@ -61,10 +56,14 @@ namespace {
         frame::Manager          m;
         frame::mprpc::ServiceT  ipcsvc;
         frame::ServiceT         svc;
-        FunctionWorkPool        fwp;
+        CallPool<void()>        cwp;
         frame::aio::Resolver    resolver;
         BubblesEnginePointerT   engine_ptr;
         PlotIteratorT           plotit;
+        Context(
+        
+        ): done(false), started(false),
+        m{}, ipcsvc(m), svc(m), cwp(WorkPoolConfiguration(), 1), resolver(cwp){}
     }g_ctx;
     
 }//namespace
@@ -188,17 +187,17 @@ int engine_start(
     auto thr_exit = []() {
     };
     
-    err = g_ctx.sch.start(thr_enter, thr_exit, 1);
-    
-    if(err){
-        solid_log(generic_logger, Error, "Error starting aio scheduler: "<<err.message());
+    try{
+        g_ctx.sch.start(thr_enter, thr_exit, 1);
+    }catch(std::exception &e){
+        solid_log(generic_logger, Error, "Error starting aio scheduler: "<<e.what());
         return -1;
     }
     
-    err = g_ctx.aio_sch.start(1);
-    
-    if(err){
-        solid_log(generic_logger, Error, "Error starting aio scheduler: "<<err.message());
+    try{
+        g_ctx.aio_sch.start(1);
+    }catch(std::exception &e){
+        solid_log(generic_logger, Error, "Error starting aio scheduler: "<<e.what());
         return -1;
     }
     
@@ -246,10 +245,10 @@ int engine_start(
             frame::mprpc::snappy::setup(cfg);
         }
         
-        err = g_ctx.ipcsvc.reconfigure(std::move(cfg));
-        
-        if(err){
-            solid_log(generic_logger, Error, "Error starting ipcservice: "<<err.message());
+        try{
+            g_ctx.ipcsvc.start(std::move(cfg));
+        }catch(std::exception &e){
+            solid_log(generic_logger, Error, "Error starting ipcservice: "<<e.what());
             return -1;
         }
     }

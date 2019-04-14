@@ -143,4 +143,4 @@ xcuserdata
 *.moved-aside
 *.xcuserstate
 .idea/
-
+client/ios/bubbles/bubbles.xcworkspace

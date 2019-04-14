@@ -210,7 +210,7 @@
 			inputFileListPaths = (
 			);
 			inputPaths = (
-				"${SRCROOT}/Pods/Target Support Files/Pods-bubbles/Pods-bubbles-frameworks.sh",
+				"${PODS_ROOT}/Target Support Files/Pods-bubbles/Pods-bubbles-frameworks.sh",
 				"${BUILT_PRODUCTS_DIR}/BoringSSL/openssl.framework",
 				"${BUILT_PRODUCTS_DIR}/BubblesEngine/BubblesEngine.framework",
 				"${BUILT_PRODUCTS_DIR}/SolidFrame/SolidFrame.framework",
@@ -227,7 +227,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${SRCROOT}/Pods/Target Support Files/Pods-bubbles/Pods-bubbles-frameworks.sh\"\n";
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-bubbles/Pods-bubbles-frameworks.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 /* End PBXShellScriptBuildPhase section */
