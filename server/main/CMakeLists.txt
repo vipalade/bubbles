@@ -41,6 +41,7 @@ target_link_libraries (bubbles_server
     solid_frame_mprpc
     solid_frame_aio_openssl
     solid_serialization_v2
+    ${ATOMIC_LIBRARY}
     ${OPENSSL_LIBRARIES}
     ${Boost_PROGRAM_OPTIONS_LIBRARY}
     ${Boost_SYSTEM_LIBRARY}

@@ -55,6 +55,13 @@ else()
             program_options
             serialization
     )
+    
+    find_library(ATOMIC_LIBRARY NAMES atomic atomic.so.1 libatomic.so.1)
+    
+    if(ATOMIC_LIBRARY)
+        message("Atomic library found: ${ATOMIC_LIBRARY}")
+        list(APPEND SYSTEM_BASIC_LIBRARIES atomic)
+    endif()
 endif(WIN32)
 
 
