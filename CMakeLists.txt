@@ -60,7 +60,7 @@ else()
     
     if(ATOMIC_LIBRARY)
         message("Atomic library found: ${ATOMIC_LIBRARY}")
-        list(APPEND SYSTEM_BASIC_LIBRARIES atomic)
+        list(APPEND SYS_BASIC_LIBS atomic)
     endif()
 endif(WIN32)
 
