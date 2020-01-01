@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+
+OPTION=$1
+APPID=$2
+BUILDID=$3
+
+PROJECT_ROOT="@PROJECT_ROOT_DIR@"
+
+createBuild()
+{
+    local APPID=$1
+    local BUILDID=$2
+
+    cp *.exe tmp/build
+    cp *.dll tmp/build
+    cp *.pem tmp/build
+    cp -r platforms tmp/build/
+	cp "$PROJECT_ROOT/client/qt/images/bubbles.png" tmp
+    magick tmp/bubbles.png -define icon:auto-resize="256,128,96,64,48,32,16" tmp/build/bubbles.ico
+    
+    echo -ne "create build $APPID $BUILDID bubbles.build tmp/build tmp/bubbles.png\nq\n" | ola_client_cli
+}
+
+createMedia()
+{
+    local APPID=$1
+    local BUILDID=$2
+
+    echo "create media $PROJECT_ROOT"
+   
+    for filename in $PROJECT_ROOT/client/qt/media/*.png; do
+        magick convert "$filename" "tmp/media/$(basename "$filename" .png).jpg"
+    done
+
+    for filename in $PROJECT_ROOT/client/qt/media/*.png; do
+        magick convert -resize 384x216 "$filename" "tmp/media/$(basename "$filename" .png)t.jpg"
+    done
+
+    echo -ne "create media $APPID $BUILDID bubbles.media tmp/media\nq\n" | ola_client_cli
+}
+
+
+rm -rf tmp
+mkdir tmp
+mkdir tmp/build
+mkdir tmp/media
+if [ $OPTION == "b" ] || [ $OPTION == "A" ] ; then
+    createBuild $APPID $BUILDID
+fi
+
+if [ $OPTION == "m" ] || [ $OPTION == "A" ] ; then
+    createMedia $APPID $BUILDID
+fi

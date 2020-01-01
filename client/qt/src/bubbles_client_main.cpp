@@ -1,3 +1,18 @@
+#undef UNICODE
+#define UNICODE
+#undef _WINSOCKAPI_
+#define _WINSOCKAPI_
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif #undef UNICODE
+#define UNICODE
+#undef _WINSOCKAPI_
+#define _WINSOCKAPI_
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <windows.h>
+
 #include "bubbles_client_widget.hpp"
 
 
@@ -68,6 +83,42 @@ struct Parameters{
     string                  connect_port;
 
     string                  room_name;
+
+    template <class T>
+    bool parse(int argc, T* argv[]) {
+        using namespace boost::program_options;
+        try {
+            options_description desc("Bubbles client");
+            // clang-format off
+            desc.add_options()
+                ("help,h", "List program options")
+                ("debug-modules,M", value<vector<string>>(&dbg_modules), "Debug logging modules (e.g. \".*:EW\", \"\\*:VIEW\")")
+                ("debug-address,A", value<string>(&dbg_addr), "Debug server address (e.g. on linux use: nc -l 9999)")
+                ("debug-port,P", value<string>(&dbg_port)->default_value("9999"), "Debug server port (e.g. on linux use: nc -l 9999)")
+                ("debug-console,C", value<bool>(&dbg_console)->implicit_value(true)->default_value(false), "Debug console")
+                ("debug-unbuffered,S", value<bool>(&dbg_buffered)->implicit_value(false)->default_value(true), "Debug unbuffered")
+
+                ("connect,c", value<std::string>(&connect_endpoint)->default_value("viphost.go.ro:36444"), "Server endpoint: address:port")
+                ("room,r", value<std::string>(&room_name)->default_value("test"), "Connect room")
+                ("secure,s", value<bool>(&secure)->implicit_value(true)->default_value(true), "Use SSL to secure communication")
+                ("compress", value<bool>(&compress)->implicit_value(true)->default_value(true), "Use Snappy to compress communication")
+                ("auto,a", value<bool>(&auto_pilot)->implicit_value(true)->default_value(true), "Auto randomly move the bubble")
+                ;
+            // clang-format on
+            variables_map vm;
+            store(parse_command_line(argc, argv, desc), vm);
+            notify(vm);
+            if (vm.count("help")) {
+                cout << desc << "\n";
+                return true;
+            }
+            return false;
+        }
+        catch (exception & e) {
+            cout << e.what() << "\n";
+            return true;
+        }
+    }
 };
 
 //-----------------------------------------------------------------------------
@@ -161,26 +212,25 @@ string load_file(const char *_fname){
                  std::istreambuf_iterator<char>());
 }
 }
-//-----------------------------------------------------------------------------
-
-bool parseArguments(Parameters &_par, int argc, char *argv[]);
 
 //-----------------------------------------------------------------------------
 //      main
 //-----------------------------------------------------------------------------
 #ifdef SOLID_ON_WINDOWS
 int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR pCmdLine, int nCmdShow){
-    int argc = 1;
-    char *argv[1] = {pCmdLine};
+    int     wargc;
+    LPWSTR* wargv = CommandLineToArgvW(GetCommandLineW(), &wargc);
+    int     argc = 1;
+    char* argv[1] = { GetCommandLineA() };
+    Parameters params;
+    if (params.parse(wargc, wargv)) return 0;
 #else
 int main(int argc, char *argv[]){
-#endif
     Parameters params;
-    
-    if(parseArguments(params, argc, argv)) return 0;
-#if !defined(SOLID_ON_WINDOWS)
     signal(SIGPIPE, SIG_IGN);
+    if (params.parse(argc, argv)) return 0;
 #endif
+    
     
     if (params.dbg_addr.size() && params.dbg_port.size()) {
         solid::log_start(
@@ -193,7 +243,7 @@ int main(int argc, char *argv[]){
         solid::log_start(std::cerr, params.dbg_modules);
     } else {
         solid::log_start(
-            *argv[0] == '.' ? argv[0] + 2 : argv[0],
+            "bubbles_client",
             params.dbg_modules,
             params.dbg_buffered,
             3,
@@ -251,13 +301,14 @@ int main(int argc, char *argv[]){
             cfg.client.connection_start_fnc = std::move(connection_start_lambda);
         }
 
+
         if(params.secure){
             //configure OpenSSL:
             solid_log(generic_logger, Info, "Configure SSL ---------------------------------------");
             frame::mprpc::openssl::setup_client(
                 cfg,
                 [](frame::aio::openssl::Context &_rctx) -> ErrorCodeT{
-                    if(true){
+                    if(false){
                         const string verify_authority_str = load_file("bubbles-ca-cert.pem");
                         const string client_cert_str = load_file("bubbles-client-cert.pem");
                         const string client_key_str = load_file("bubbles-client-key.pem");
@@ -266,9 +317,12 @@ int main(int argc, char *argv[]){
                         _rctx.loadCertificate(client_cert_str);
                         _rctx.loadPrivateKey(client_key_str);
                     }else{
-                        _rctx.loadVerifyFile("bubbles-ca-cert.pem");
-                        _rctx.loadCertificateFile("bubbles-client-cert.pem");
-                        _rctx.loadPrivateKeyFile("bubbles-client-key.pem");
+                        auto err = _rctx.loadVerifyFile("bubbles-ca-cert.pem");
+                        solid_check(!err);
+                        err = _rctx.loadCertificateFile("bubbles-client-cert.pem");
+                        solid_check(!err);
+                        err = _rctx.loadPrivateKeyFile("bubbles-client-key.pem");
+                        solid_check(!err);
                     }
                     return ErrorCodeT();
                 },
@@ -298,40 +352,6 @@ int main(int argc, char *argv[]){
     engine_ptr->pause();
 
     return rv;
-}
-
-//-----------------------------------------------------------------------------
-
-bool parseArguments(Parameters &_par, int argc, char *argv[]){
-    using namespace boost::program_options;
-    try{
-        options_description desc("Bubbles client");
-        desc.add_options()
-            ("help,h", "List program options")
-            ("debug-modules,M", value<vector<string>>(&_par.dbg_modules),"Debug logging modules (e.g. \".*:EW\", \"\\*:VIEW\")")
-            ("debug-address,A", value<string>(&_par.dbg_addr), "Debug server address (e.g. on linux use: nc -l 9999)")
-            ("debug-port,P", value<string>(&_par.dbg_port)->default_value("9999"), "Debug server port (e.g. on linux use: nc -l 9999)")
-            ("debug-console,C", value<bool>(&_par.dbg_console)->implicit_value(true)->default_value(false), "Debug console")
-            ("debug-unbuffered,S", value<bool>(&_par.dbg_buffered)->implicit_value(false)->default_value(true), "Debug unbuffered")
-
-            ("connect,c", value<std::string>(&_par.connect_endpoint)->default_value("viphost.go.ro:36444"), "Server endpoint: address:port")
-            ("room,r", value<std::string>(&_par.room_name)->default_value("test"), "Connect room")
-            ("secure,s", value<bool>(&_par.secure)->implicit_value(true)->default_value(true), "Use SSL to secure communication")
-            ("compress", value<bool>(&_par.compress)->implicit_value(true)->default_value(true), "Use Snappy to compress communication")
-            ("auto,a", value<bool>(&_par.auto_pilot)->implicit_value(true)->default_value(true), "Auto randomly move the bubble")
-        ;
-        variables_map vm;
-        store(parse_command_line(argc, argv, desc), vm);
-        notify(vm);
-        if (vm.count("help")) {
-            cout << desc << "\n";
-            return true;
-        }
-        return false;
-    }catch(exception& e){
-        cout << e.what() << "\n";
-        return true;
-    }
 }
 
 //-----------------------------------------------------------------------------

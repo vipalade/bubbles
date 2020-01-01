@@ -1,0 +1,49 @@
+name = "windows";
+tag = "r1.3";
+dictionary : 
+{
+  en-US : 
+  {
+    NAME = "Bubbles";
+    DESCRIPTION = "Test application for SolidFrame framework";
+    BRIEF = "Test application for SolidFrame";
+    COMPANY = "solidoss";
+  };
+  ro-RO : 
+  {
+    NAME = "Bule";
+    DESCRIPTION = "Aplicatie test pentru framework-ul SolidFrame";
+    BRIEF = "Aplicatie test pentru framework-ul SolidFrame";
+    COMPANY = "solidoss";
+  };
+};
+properties : 
+{
+  name = "${NAME}";
+  description = "${DESCRIPTION}";
+};
+configurations = ( 
+  {
+    name = "windows64bit";
+    directory = "${NAME}";
+    flags = [ "HiddenDirectory" ];
+    oses = [ "Windows10x86_64" ];
+    mounts = ( 
+    );
+    exes = [ "bubbles_client.exe" ];
+    properties : 
+    {
+      name = "${NAME}";
+      description = "${DESCRIPTION}";
+      brief = "${BRIEF}";
+      company = "${COMPANY}";
+    };
+    shortcuts = ( 
+      {
+        name = "${NAME}";
+        command = "bubbles_client.exe";
+        arguments = "";
+        icon = "bubbles.ico";
+        run_folder = "";
+      } );
+  } );

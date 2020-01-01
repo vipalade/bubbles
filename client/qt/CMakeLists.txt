@@ -56,6 +56,26 @@ if(${Qt5Widgets_FOUND} AND Boost_FOUND)
         #   ${res}
             ${src_basic_gui}
         )
+
+        find_file(BBLS_VCRUNTIME_DLL "vcruntime140_1.dll" PATHS "$ENV{SYSTEMROOT}\\System32")
+
+        set_target_properties(
+            bubbles_client PROPERTIES
+            VS_DEBUGGER_WORKING_DIRECTORY $<TARGET_FILE_DIR:bubbles_client>)
+        
+        add_custom_command(TARGET bubbles_client POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:Qt5::Core> $<TARGET_FILE_DIR:bubbles_client>
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:Qt5::Gui> $<TARGET_FILE_DIR:bubbles_client>
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:Qt5::Widgets> $<TARGET_FILE_DIR:bubbles_client>
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different ${PROJECT_SOURCE_DIR}/certs/bubbles-ca-cert.pem  $<TARGET_FILE_DIR:bubbles_client>
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different ${PROJECT_SOURCE_DIR}/certs/bubbles-client-key.pem  $<TARGET_FILE_DIR:bubbles_client>
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different ${PROJECT_SOURCE_DIR}/certs/bubbles-client-cert.pem  $<TARGET_FILE_DIR:bubbles_client>
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_SOURCE_DIR}/bubbles.build $<TARGET_FILE_DIR:bubbles_client>
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_SOURCE_DIR}/bubbles.media $<TARGET_FILE_DIR:bubbles_client>
+            COMMAND ${CMAKE_COMMAND} -E copy_directory $<TARGET_FILE_DIR:Qt5::Widgets>/../plugins/platforms $<TARGET_FILE_DIR:bubbles_client>/platforms
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different "${BBLS_VCRUNTIME_DLL}" $<TARGET_FILE_DIR:bubbles_client>
+            COMMAND ${CMAKE_COMMAND} -DINFILE="${CMAKE_CURRENT_SOURCE_DIR}/ola_upload.in"  -DOUTFILE=$<TARGET_FILE_DIR:bubbles_client>/ola_upload -DPROJECT_ROOT_DIR="${CMAKE_SOURCE_DIR}" -P "${CMAKE_CURRENT_SOURCE_DIR}/GenericConfigureFile.cmake"
+        )
     elseif(APPLE)
         add_executable(
             bubbles_client
