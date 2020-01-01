@@ -132,8 +132,8 @@ struct EventStub{
         _s.add(_rthis.event, _rctx, "event");
         _s.add(_rthis.connection_id, _rctx, "connection_id");
         _s.add(_rthis.sender_rgb_color, _rctx, "sender_rgb_color");
-        _s.add(_rthis.text, _rctx, "text");
-        _s.add(_rthis.events, _rctx, "events");
+        _s.add(_rthis.text, solid::serialization::limit(1024), _rctx, "text");
+        _s.add(_rthis.events, solid::serialization::limit(1024), _rctx, "events");
     }
 };
 
@@ -158,14 +158,7 @@ struct EventsNotification: solid::frame::mprpc::Message{
     }
 
     SOLID_PROTOCOL_V2(_s, _rthis, _rctx, _name){
-        const size_t limit_container = _s.limits().container();
-        const size_t limit_string = _s.limits().string();
-        
-        _s.limitContainer(1024, _name);
-        _s.limitString(1024, _name);
-        _s.add(_rthis.event_stub, _rctx, "event_stub").add(_rthis.event_stubs, _rctx, "event_stubs");
-        _s.limitContainer(limit_container, _name);
-        _s.limitString(limit_string, _name);
+        _s.add(_rthis.event_stub, _rctx, "event_stub").add(_rthis.event_stubs, solid::serialization::limit(1024), _rctx, "event_stubs");
     }
 };
 
